@@ -1,0 +1,26 @@
+{
+    "id": "2141BDBD",
+    "path": "~/R Packages/lessTest/man/LESSBase.Rd",
+    "project_path": "man/LESSBase.Rd",
+    "type": "r_doc",
+    "hash": "3198650726",
+    "contents": "",
+    "dirty": false,
+    "created": 1657278029044.0,
+    "source_on_save": false,
+    "relative_order": 3,
+    "properties": {
+        "source_window_id": "",
+        "Source": "Source"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1657277653,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1657277653,
+    "read_only": true,
+    "read_only_alternatives": [
+        "R/lessTest.R"
+    ]
+}
