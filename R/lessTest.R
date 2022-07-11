@@ -6,9 +6,11 @@ SklearnEstimator <- R6::R6Class(classname = "SklearnEstimator",
                                   fit = function() {
                                     #maybe check for
                                     print("dummy fit function")
+                                    invisible(self)
                                   },
                                   predict = function(){
                                     print("dummy predict function")
+                                    invisible(self)
                                   },
                                   public_fields = function(){
                                     return(names(get(class(self)[1])$public_fields))
@@ -55,6 +57,24 @@ LinearRegression <- R6::R6Class(classname = "LinearRegression",
                                 )
                                 )
 
+DecisionTreeRegressor <- R6::R6Class(classname = "DecisionTreeRegressor",
+                                     inherit = SklearnEstimator,
+                                     public = list(
+                                       fit = function(X, y) {
+                                         merged_data <- cbind(y, X)
+                                         df <- as.data.frame(merged_data)
+                                         model <- rpart::rpart(y ~ ., method = "anova", data = df)
+                                         # print("model: ")
+                                         # summary(model)
+                                         # rpart.plot::rpart.plot(model)
+                                       },
+                                       predict = function(X, model) {
+                                         data <- data.frame(X)
+                                         predict(model, data, method = "anova")
+                                       }
+                                     )
+                                     )
+
 ####################
 
 #' RBF kernel - L2 norm
@@ -64,6 +84,15 @@ rbf <- function(data, center, coeff=0.01){
     exp(-coeff * norm(point1 - point2, type = "2"))
   }
   mapply(distFunction, data, center)
+}
+
+# Standardization function instead of StandardScaler
+standardize = function(x){
+  standart_dev <- function(ln) {
+    sqrt(sum((ln - mean(ln)) ^ 2 / length(ln)))
+  }
+  z <- (x - mean(x)) / standart_dev(x)
+  return( z)
 }
 ###################
 
@@ -83,9 +112,12 @@ LESSBase <- R6::R6Class(classname = "LESSBase",
                         n_subsets = NULL,
                         n_neighbors = NULL,
                         local_estimator = NULL,
+                        d_normalize = NULL,
+                        global_estimator = NULL,
                         # fix replication amount
                         initialize = function(replications = NA, scobject = NA, isFitted = FALSE, n_replications = 5,
-                                              random_state = NA, n_subsets = 2, n_neighbors = 5, local_estimator = NA) {
+                                              random_state = NA, n_subsets = 2, n_neighbors = 5, local_estimator = NA,
+                                              d_normalize = TRUE, global_estimator = NA) {
                           self$replications = replications
                           self$scobject = scobject
                           self$isFitted = isFitted
@@ -94,6 +126,8 @@ LESSBase <- R6::R6Class(classname = "LESSBase",
                           self$n_subsets = n_subsets
                           self$n_neighbors = n_neighbors
                           self$local_estimator = local_estimator
+                          self$d_normalize = d_normalize
+                          self$global_estimator = global_estimator
 
                         },
                         set_local_attributes = function() {
@@ -104,14 +138,20 @@ LESSBase <- R6::R6Class(classname = "LESSBase",
                           #' Fit function: All data is used with the global estimator (no validation)
                           #' Tree method is used (no clustering)
 
-                          len_X <- length(X)
+                          len_X <- NULL
+                          if(is.matrix(X) | is.data.frame(X)){
+                            len_X <- nrow(X)
+                          }else{
+                            print("nah")
+                          }
+                          print(len_X)
                           #FIXME check_input
-                          self$replications <- c()
+                          self$replications <- list()
                           for (i in 1:self$n_replications) {
                             # set.seed(self$random_state) # set seed each time so
                             sample_indices <- sample(len_X, size = self$n_subsets)
                             cat("sample indices: ", sample_indices, "\n")
-                            nearest_neighbors <- RANN::nn2(X, X[sample_indices], k = self$n_neighbors)
+                            nearest_neighbors <- RANN::nn2(X, X[sample_indices,], k = self$n_neighbors)
                             neighbor_indices_list <- nearest_neighbors[[1]]
                             print(neighbor_indices_list)
 
@@ -130,7 +170,7 @@ LESSBase <- R6::R6Class(classname = "LESSBase",
 
                               local_model <- NULL
                               #if random_state is set
-                              if(!is.na(self$get_attributes()$random_state)) {
+                              if(!is.na(self$local_estimator$get_attributes()$random_state)) {
                                 # FIXME
                                 # self$local_estimator$random_state <-
                                 local_model <- self$local_estimator$fit(Xneighbors, yneighbors)
@@ -144,16 +184,57 @@ LESSBase <- R6::R6Class(classname = "LESSBase",
                               if(is.null(self$distance_function)) {
                                 dists[,i] = rbf(X, local_center, 1.0/(self$n_subsets ^ 2.0))
                               }else {
-                                # FIXME add distance function
+                                # FIXME add distance function instead of rbf function
                                 dists[,i] = rbf(X, local_center, 1.0/(self$n_subsets ^ 2.0))
                               }
-
                             }
-                          }
 
+                            if(self$d_normalize) {
+                              denom <- rowSums(dists)
+                              # print("denom: ")
+                              denom[denom < 1e-08] <- 1e-08
+                              # print(denom)
+                              # print("dists before norm: ")
+                              # print(dists)
+                              dists <- t(t(dists)/denom)
+                              # print("dists after norm: ")
+                              # print(dists)
+                            }
+
+                            Z <- dists * predicts
+                            if(self.scaling){
+                              Z <- apply(Z, 2, standardize)
+                            }
+
+                            global_model <- NULL
+                            if(!is.na(self$global_estimator)){
+                              if(!is.na(self$global_estimator$get_attributes()$random_state)){
+                                # FIXME add random state
+                                global_model <- self$global_estimator$fit(Z, y)
+                              }else{
+                                global_model <- self$global_estimator$fit(Z, y)
+                              }
+                            }
+                            #ADD scobject to the replication ?
+                            self$replications <- list(self$replications, Replication$new(local_estimators = local_models,
+                                                                                         global_estimator = global_model))
+
+                          }
+                          invisible(self)
                         }
                       )
                     )
+
+
+LESSRegressor <- R6::R6Class(classname = "LESSRegressor",
+                             inherit = LESSBase,
+                             public = list(
+                               fit = function(X, y){
+                                 self$fitnoval(X, y)
+                                 self$isFitted = TRUE
+                                 self$replications[1]
+                               }
+                             ))
 
 
 #' Apply linear regression
@@ -166,6 +247,9 @@ LESSBase <- R6::R6Class(classname = "LESSBase",
 #'
 #' @examples linReg()
 linReg <- function(x=c(151, 174, 138, 186, 128, 136, 179, 163, 152, 131), y=c(63, 81, 56, 91, 47, 57, 76, 72, 62, 48)) {
-  LESS <- LESSBase$new(random_state = 5, local_estimator = LinearRegression$new())
-  LESS$fitnoval(x, y)
+  abalone <- read.csv(file='datasets/abalone.csv', header = FALSE)
+  xvals <- abalone[,-ncol(abalone)]
+  yval <- abalone[,ncol(abalone)]
+  LESS <- LESSRegressor$new(n_neighbors = 209, n_subsets=19, random_state = 5, local_estimator = LinearRegression$new(), global_estimator = DecisionTreeRegressor$new())
+  LESS$fit(xvals, yval)
 }
