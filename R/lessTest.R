@@ -1,5 +1,9 @@
 SklearnEstimator <- R6::R6Class(classname = "SklearnEstimator",
                                 public = list(
+                                  random_state = NULL,
+                                  initialize = function(random_state = NA) {
+                                    self$random_state = random_state
+                                  },
                                   printsk = function() {
                                     cat("sklearn: ", self$isFitted, "\n")
                                   },
@@ -13,7 +17,14 @@ SklearnEstimator <- R6::R6Class(classname = "SklearnEstimator",
                                     invisible(self)
                                   },
                                   public_fields = function(){
-                                    return(names(get(class(self)[1])$public_fields))
+                                    classList <- class(self)[-length(class(self))]
+                                    classNum <- length(classList)
+                                    fieldList <- list()
+                                    for (i in 1:classNum) {
+                                      fields <- get(class(self)[i])$public_fields
+                                      fieldList <- append(fieldList, fields)
+                                    }
+                                    return(names(fieldList))
                                   },
 
                                   get_attributes = function(){
@@ -36,6 +47,9 @@ LocalModel <- R6::R6Class(classname = "LocalModel",
 
 Replication <- R6::R6Class(classname = "Replication",
                        public = list(
+                         sc_object = NULL,
+                         global_estimator = NULL,
+                         local_estimators = NULL,
                          initialize = function(sc_object = NA, global_estimator = NA, local_estimators = NA) {
                            self$sc_object <- sc_object #"StandardScaler"
                            self$global_estimator <- global_estimator #"SklearnEstimator"
@@ -47,12 +61,13 @@ LinearRegression <- R6::R6Class(classname = "LinearRegression",
                                 inherit = SklearnEstimator,
                                 public = list(
                                   fit = function(X, y) {
-                                    model <- lm(y ~ as.vector(X))
+                                    df <- prepareDataset(X, y)
+                                    model <- lm(y ~ ., data = df)
                                     model
                                   },
                                   predict = function(X, model) {
-                                    data <- data.frame(X)
-                                    predict(model, data)
+                                    data <- prepareXset(X)
+                                    predict(model, newdata = data)
                                   }
                                 )
                                 )
@@ -80,10 +95,11 @@ DecisionTreeRegressor <- R6::R6Class(classname = "DecisionTreeRegressor",
 #' RBF kernel - L2 norm
 #' This is is used as the default distance function in LESS
 rbf <- function(data, center, coeff=0.01){
+  # data <- matrix(data)
   distFunction <- function(point1, point2) {
     exp(-coeff * norm(point1 - point2, type = "2"))
   }
-  mapply(distFunction, data, center)
+  apply(data, 1, distFunction, center)
 }
 
 # Standardization function instead of StandardScaler
@@ -93,6 +109,30 @@ standardize = function(x){
   }
   z <- (x - mean(x)) / standart_dev(x)
   return( z)
+}
+
+# takes X and y datasets and merges them into a dataframe with column names
+prepareDataset = function(X, y) {
+  merged_data <- cbind(y, X)
+  df <- as.data.frame(merged_data)
+  colX <- list()
+  for(i in 1:ncol(X)){
+    colX <- append(colX, paste(c("X", i), collapse = "_"))
+  }
+  column_names = append(list("y"), colX)
+  colnames(df) <- column_names
+  df
+}
+
+# takes X dataset and convert it into a dataframe with column names
+prepareXset = function(X) {
+  df <- as.data.frame(X)
+  colX <- list()
+  for(i in 1:ncol(X)){
+    colX <- append(colX, paste(c("X", i), collapse = "_"))
+  }
+  colnames(df) <- colX
+  df
 }
 ###################
 
@@ -107,28 +147,12 @@ LESSBase <- R6::R6Class(classname = "LESSBase",
                         isFitted = FALSE,
                         replications = NULL,
                         scobject = NULL,
-                        n_replications = 50,
-                        random_state = NULL,
-                        n_subsets = NULL,
-                        n_neighbors = NULL,
-                        local_estimator = NULL,
-                        d_normalize = NULL,
-                        global_estimator = NULL,
+
                         # fix replication amount
-                        initialize = function(replications = NA, scobject = NA, isFitted = FALSE, n_replications = 5,
-                                              random_state = NA, n_subsets = 2, n_neighbors = 5, local_estimator = NA,
-                                              d_normalize = TRUE, global_estimator = NA) {
+                        initialize = function(replications = NA, scobject = NA, isFitted = FALSE) {
                           self$replications = replications
                           self$scobject = scobject
                           self$isFitted = isFitted
-                          self$n_replications = n_replications
-                          self$random_state = random_state
-                          self$n_subsets = n_subsets
-                          self$n_neighbors = n_neighbors
-                          self$local_estimator = local_estimator
-                          self$d_normalize = d_normalize
-                          self$global_estimator = global_estimator
-
                         },
                         set_local_attributes = function() {
                           print("to be done")
@@ -144,23 +168,20 @@ LESSBase <- R6::R6Class(classname = "LESSBase",
                           }else{
                             print("nah")
                           }
-                          print(len_X)
                           #FIXME check_input
                           self$replications <- list()
                           for (i in 1:self$n_replications) {
                             # set.seed(self$random_state) # set seed each time so
                             sample_indices <- sample(len_X, size = self$n_subsets)
-                            cat("sample indices: ", sample_indices, "\n")
-                            nearest_neighbors <- RANN::nn2(X, X[sample_indices,], k = self$n_neighbors)
+                            nearest_neighbors <- RANN::nn2(data = X, query = X[sample_indices,], k = self$n_neighbors)
                             neighbor_indices_list <- nearest_neighbors[[1]]
-                            print(neighbor_indices_list)
 
                             local_models <- list() # List[LocalModel]
                             dists <- matrix(0, len_X, self$n_subsets)
                             predicts <- matrix(0, len_X, self$n_subsets)
 
                             for (i in 1:nrow(neighbor_indices_list)) {
-                              Xneighbors <- as.matrix(X[neighbor_indices_list[i, ]])
+                              Xneighbors <- as.matrix(X[neighbor_indices_list[i, ],])
                               yneighbors <- as.matrix(y[neighbor_indices_list[i, ]])
                               # cat(i, "th subset", "x neighbors: ", Xneighbors, "\n")
                               # cat(i, "th subset", "y neighbors: ", yneighbors, "\n")
@@ -177,7 +198,7 @@ LESSBase <- R6::R6Class(classname = "LESSBase",
                               }else{
                                 local_model <- self$local_estimator$fit(Xneighbors, yneighbors)
                               }
-                              local_models <- list(local_models, LocalModel$new(estimator = local_model, center = local_center))
+                              local_models <- append(local_models, LocalModel$new(estimator = local_model, center = local_center))
 
                               predicts[,i] <- self$local_estimator$predict(X, local_model)
 
@@ -202,12 +223,13 @@ LESSBase <- R6::R6Class(classname = "LESSBase",
                             }
 
                             Z <- dists * predicts
-                            if(self.scaling){
+                            if(self$scaling){
                               Z <- apply(Z, 2, standardize)
                             }
 
                             global_model <- NULL
-                            if(!is.na(self$global_estimator)){
+                            # if(Reduce('|', is.na(self$global_estimator)))
+                            if(length(self$global_estimator) != 0){ #for a null environment, the length is 0
                               if(!is.na(self$global_estimator$get_attributes()$random_state)){
                                 # FIXME add random state
                                 global_model <- self$global_estimator$fit(Z, y)
@@ -216,7 +238,7 @@ LESSBase <- R6::R6Class(classname = "LESSBase",
                               }
                             }
                             #ADD scobject to the replication ?
-                            self$replications <- list(self$replications, Replication$new(local_estimators = local_models,
+                            self$replications <- append(self$replications, Replication$new(local_estimators = local_models,
                                                                                          global_estimator = global_model))
 
                           }
@@ -229,10 +251,28 @@ LESSBase <- R6::R6Class(classname = "LESSBase",
 LESSRegressor <- R6::R6Class(classname = "LESSRegressor",
                              inherit = LESSBase,
                              public = list(
+                               n_replications = 50,
+                               random_state = NULL,
+                               n_subsets = NULL,
+                               n_neighbors = NULL,
+                               local_estimator = NULL,
+                               d_normalize = NULL,
+                               global_estimator = NULL,
+                               scaling = NULL,
+                               initialize = function(n_replications = 5, random_state = NA, n_subsets = 2, n_neighbors = 5,
+                                                     local_estimator = NA, d_normalize = TRUE, global_estimator = NA, scaling = TRUE) {
+                                 self$n_replications = n_replications
+                                 self$random_state = random_state
+                                 self$n_subsets = n_subsets
+                                 self$n_neighbors = n_neighbors
+                                 self$local_estimator = local_estimator
+                                 self$d_normalize = d_normalize
+                                 self$global_estimator = global_estimator
+                                 self$scaling = scaling
+                               },
                                fit = function(X, y){
                                  self$fitnoval(X, y)
                                  self$isFitted = TRUE
-                                 self$replications[1]
                                }
                              ))
 
