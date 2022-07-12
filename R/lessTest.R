@@ -4,9 +4,6 @@ SklearnEstimator <- R6::R6Class(classname = "SklearnEstimator",
                                   initialize = function(random_state = NA) {
                                     self$random_state = random_state
                                   },
-                                  printsk = function() {
-                                    cat("sklearn: ", self$isFitted, "\n")
-                                  },
                                   fit = function() {
                                     #maybe check for
                                     print("dummy fit function")
@@ -89,6 +86,37 @@ DecisionTreeRegressor <- R6::R6Class(classname = "DecisionTreeRegressor",
                                        }
                                      )
                                      )
+StandardScaler <- R6::R6Class(classname = "StandardScaler",
+                              public = list(
+                                mean = NULL,
+                                stdev = NULL,
+                                fit = function(X) {
+                                  # standart deviation function for internal use
+                                  standart_dev <- function(ln) {
+                                    sqrt(sum((ln - mean(ln)) ^ 2 / length(ln)))
+                                  }
+                                  # assign mean and standart deviation parameters
+                                  self$stdev <- apply(X, 2, standart_dev)
+                                  self$mean <- colMeans(X)
+                                  invisible(self)
+                                },
+                                transform = function(X) {
+                                  # append mean and standart deviation values to the X matrix
+                                  merged <- rbind(self$mean, self$stdev, X)
+                                  # standardize each value by the corresponding mean and stdev values
+                                  # using z = (x - u) / s formula
+                                  merged <- apply(merged, 2, function(x) (x - x[1]) / x[2] )
+                                  #return the standardized version of original X matrix, extract the mean and stdev rows (first 2 cols)
+                                  return(merged[3:nrow(merged),])
+                                },
+                                fit_transform = function(X) {
+                                  self$fit(X)$transform(X)
+                                },
+                                print = function() {
+                                  cat("Mean: ", self$mean, "\n")
+                                  cat("Standart Deviation: ", self$stdev, "\n")
+                                }
+                              ))
 
 ####################
 
@@ -212,19 +240,14 @@ LESSBase <- R6::R6Class(classname = "LESSBase",
 
                             if(self$d_normalize) {
                               denom <- rowSums(dists)
-                              # print("denom: ")
                               denom[denom < 1e-08] <- 1e-08
-                              # print(denom)
-                              # print("dists before norm: ")
-                              # print(dists)
                               dists <- t(t(dists)/denom)
-                              # print("dists after norm: ")
-                              # print(dists)
                             }
 
                             Z <- dists * predicts
+                            scobject <- StandardScaler$new()
                             if(self$scaling){
-                              Z <- apply(Z, 2, standardize)
+                              Z <- scobject$fit_transform(Z)
                             }
 
                             global_model <- NULL
@@ -273,6 +296,9 @@ LESSRegressor <- R6::R6Class(classname = "LESSRegressor",
                                fit = function(X, y){
                                  self$fitnoval(X, y)
                                  self$isFitted = TRUE
+                               },
+                               predict = function(X0) {
+
                                }
                              ))
 
