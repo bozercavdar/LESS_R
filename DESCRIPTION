@@ -11,9 +11,12 @@ Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.2.0
 Imports: 
-    magrittr,
+    bench,
     methods,
+    MLmetrics,
+    profvis,
     R6,
     RANN,
     rpart,
-    rpart.plot
+    rpart.plot,
+    wordspace

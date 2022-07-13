@@ -129,20 +129,9 @@ StandardScaler <- R6::R6Class(classname = "StandardScaler",
 #' RBF kernel - L2 norm
 #' This is is used as the default distance function in LESS
 rbf <- function(data, center, coeff=0.01){
-  # data <- matrix(data)
-  distFunction <- function(point1, point2) {
-    exp(-coeff * norm(point1 - point2, type = "2"))
-  }
-  apply(data, 1, distFunction, center)
-}
-
-# Standardization function instead of StandardScaler
-standardize = function(x){
-  standart_dev <- function(ln) {
-    sqrt(sum((ln - mean(ln)) ^ 2 / length(ln)))
-  }
-  z <- (x - mean(x)) / standart_dev(x)
-  return( z)
+  dataDiff <- sweep(data, 2, center) #extract center from all rows of data
+  normRows = wordspace::rowNorms(dataDiff, method = "euclidean", p=2) #take l2 norms of each row
+  exp(-coeff * normRows)
 }
 
 # takes X and y datasets and merges them into a dataframe with column names
@@ -383,14 +372,24 @@ LESSRegressor <- R6::R6Class(classname = "LESSRegressor",
 #'
 #' @examples linReg()
 linReg <- function() {
-  abalone <- read.csv(file='datasets/abalone.csv', header = FALSE)
-  xvals <- abalone[,-ncol(abalone)]
-  yval <- abalone[,ncol(abalone)]
-  LESS <- LESSRegressor$new(n_replications = 50, n_neighbors = 209, n_subsets=19, local_estimator = LinearRegression$new(), global_estimator = LinearRegression$new())
-  preds <- LESS$fit(xvals, yval)$predict(xvals)
-  data <- data.frame(actual = yval, pred = preds)
-  mse <- mean((data$actual - data$pred)^2)
-  print(mse)
+  profvis::profvis({
+    abalone <- read.csv(file='datasets/abalone.csv', header = FALSE)
+    xvals <- abalone[,-ncol(abalone)]
+    yval <- abalone[,ncol(abalone)]
+    LESS <- LESSRegressor$new(n_replications = 50, n_neighbors = 209, n_subsets=19, local_estimator = LinearRegression$new(), global_estimator = LinearRegression$new())
+    preds <- LESS$fit(xvals, yval)$predict(xvals)
+    data <- data.frame(actual = yval, pred = preds)
+    mape <- MLmetrics::MAPE(preds, yval)
+    print(mape)
+  })
 
+  # abalone <- read.csv(file='datasets/abalone.csv', header = FALSE)
+  # xvals <- abalone[,-ncol(abalone)]
+  # yval <- abalone[,ncol(abalone)]
+  # LESS <- LESSRegressor$new(n_replications = 5, n_neighbors = 209, n_subsets=19, local_estimator = LinearRegression$new(), global_estimator = LinearRegression$new())
+  # preds <- LESS$fit(xvals, yval)$predict(xvals)
+  # data <- data.frame(actual = yval, pred = preds)
+  # mape <- MLmetrics::MAPE(preds, yval)
+  # print(mape)
 
 }
