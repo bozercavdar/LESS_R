@@ -19,6 +19,7 @@ Tree method is used (no clustering)
 \itemize{
 \item \href{#method-LESSBase-new}{\code{LESSBase$new()}}
 \item \href{#method-LESSBase-set_local_attributes}{\code{LESSBase$set_local_attributes()}}
+\item \href{#method-LESSBase-check_input}{\code{LESSBase$check_input()}}
 \item \href{#method-LESSBase-fitnoval}{\code{LESSBase$fitnoval()}}
 \item \href{#method-LESSBase-clone}{\code{LESSBase$clone()}}
 }
@@ -27,7 +28,9 @@ Tree method is used (no clustering)
 <details open><summary>Inherited methods</summary>
 <ul>
 <li><span class="pkg-link" data-pkg="lessTest" data-topic="SklearnEstimator" data-id="fit"><a href='../../lessTest/html/SklearnEstimator.html#method-SklearnEstimator-fit'><code>lessTest::SklearnEstimator$fit()</code></a></li>
+<li><span class="pkg-link" data-pkg="lessTest" data-topic="SklearnEstimator" data-id="get_attributes"><a href='../../lessTest/html/SklearnEstimator.html#method-SklearnEstimator-get_attributes'><code>lessTest::SklearnEstimator$get_attributes()</code></a></li>
 <li><span class="pkg-link" data-pkg="lessTest" data-topic="SklearnEstimator" data-id="predict"><a href='../../lessTest/html/SklearnEstimator.html#method-SklearnEstimator-predict'><code>lessTest::SklearnEstimator$predict()</code></a></li>
+<li><span class="pkg-link" data-pkg="lessTest" data-topic="SklearnEstimator" data-id="public_fields"><a href='../../lessTest/html/SklearnEstimator.html#method-SklearnEstimator-public_fields'><code>lessTest::SklearnEstimator$public_fields()</code></a></li>
 </ul>
 </details>
 }}
@@ -36,7 +39,7 @@ Tree method is used (no clustering)
 \if{latex}{\out{\hypertarget{method-LESSBase-new}{}}}
 \subsection{Method \code{new()}}{
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{LESSBase$new(replication = NA, scobject = NA, isFitted)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{LESSBase$new(replications = NA, scobject = NA, isFitted = FALSE)}\if{html}{\out{</div>}}
 }
 
 }
@@ -46,6 +49,15 @@ Tree method is used (no clustering)
 \subsection{Method \code{set_local_attributes()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{LESSBase$set_local_attributes()}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-LESSBase-check_input"></a>}}
+\if{latex}{\out{\hypertarget{method-LESSBase-check_input}{}}}
+\subsection{Method \code{check_input()}}{
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{LESSBase$check_input(len_X)}\if{html}{\out{</div>}}
 }
 
 }

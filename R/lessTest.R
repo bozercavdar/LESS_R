@@ -517,16 +517,12 @@ LESSRegressor <- R6::R6Class(classname = "LESSRegressor",
                              ))
 
 
-#' Apply linear regression
+#' Apply LESS regression
 #'
-#' @param x vector of x values, default c(151, 174, 138, 186, 128, 136, 179, 163, 152, 131)
-#' @param y vector of y values, default c(63, 81, 56, 91, 47, 57, 76, 72, 62, 48)
-#'
-#' @return Prints the relation between y and x
 #' @export
 #'
-#' @examples linReg()
-linReg <- function() {
+#' @examples lessReg()
+lessReg <- function() {
   # UNCOMMENT THIS CODE BLOCK TO PROFILE THE CODE AND SEE A PERFORMANCE ANALYSIS OF THE CODE
   # profvis::profvis({
   #   abalone <- read.csv(file='datasets/abalone.csv', header = FALSE)
@@ -544,7 +540,7 @@ linReg <- function() {
   yval <- abalone[,ncol(abalone)]
   LESS <- LESSRegressor$new()
   preds <- LESS$fit(xvals, yval)$predict(xvals)
-  data <- data.frame(actual = yval, pred = preds)
+
   mape <- MLmetrics::MAPE(preds, yval)
   print(mape)
 
