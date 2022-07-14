@@ -124,6 +124,31 @@ StandardScaler <- R6::R6Class(classname = "StandardScaler",
                                 }
                               ))
 
+RandomGenerator <- R6::R6Class(classname = "RandomGenerator",
+                               public = list(
+                                 random_state = NULL,
+                                 initialize = function(random_state){
+                                   self$random_state = random_state
+
+                                   # if(!is.null(random_state)){ # check if the input random_state is an integer
+                                   #   if(random_state%%1!=0){
+                                   #     # FIXME
+                                   #     warning("a non-integer value is assigned as random_state. A random integer is being assigned instead...")
+                                   #     self$random_state = sample.int(as.integer(.Machine$integer.max), 1)
+                                   #   }
+                                   # }
+                                   # else{
+                                   #   self$random_state = random_state
+                                   # }
+                                 },
+                                 choice = function(range, size){
+                                   # range: sampling takes place from 1:range
+                                   # size: a non-negative integer giving the number of items to choose
+                                   set.seed(self$random_state)
+                                   sample(range, size = size)
+                                 }
+                               ))
+
 ####################
 
 #' RBF kernel - L2 norm
@@ -189,7 +214,7 @@ LESSBase <- R6::R6Class(classname = "LESSBase",
                           self$replications <- list()
                           for (i in 1:self$n_replications) {
                             # set.seed(self$random_state) # set seed each time so
-                            sample_indices <- sample(len_X, size = self$n_subsets)
+                            sample_indices <- self$rng$choice(range = len_X, size = self$n_subsets)
                             nearest_neighbors <- RANN::nn2(data = X, query = X[sample_indices,], k = self$n_neighbors)
                             neighbor_indices_list <- nearest_neighbors[[1]]
 
@@ -272,7 +297,8 @@ LESSRegressor <- R6::R6Class(classname = "LESSRegressor",
                                scaling = NULL,
                                cluster_method = NULL,
                                distance_function = NULL,
-                               initialize = function(n_replications = 5, random_state = NA, n_subsets = 2, n_neighbors = 5,
+                               rng = NULL,
+                               initialize = function(n_replications = 5, random_state = NULL, n_subsets = 2, n_neighbors = 5,
                                                      local_estimator = NA, d_normalize = TRUE, global_estimator = NA, scaling = TRUE,
                                                      cluster_method = NA, distance_function = NA) {
                                  self$n_replications = n_replications
@@ -285,6 +311,7 @@ LESSRegressor <- R6::R6Class(classname = "LESSRegressor",
                                  self$scaling = scaling
                                  self$cluster_method = cluster_method
                                  self$distance_function = distance_function
+                                 self$rng = RandomGenerator$new(random_state = self$random_state)
                                },
                                fit = function(X, y){
                                  # FIXME check operations
@@ -372,24 +399,25 @@ LESSRegressor <- R6::R6Class(classname = "LESSRegressor",
 #'
 #' @examples linReg()
 linReg <- function() {
-  profvis::profvis({
-    abalone <- read.csv(file='datasets/abalone.csv', header = FALSE)
-    xvals <- abalone[,-ncol(abalone)]
-    yval <- abalone[,ncol(abalone)]
-    LESS <- LESSRegressor$new(n_replications = 50, n_neighbors = 209, n_subsets=19, local_estimator = LinearRegression$new(), global_estimator = LinearRegression$new())
-    preds <- LESS$fit(xvals, yval)$predict(xvals)
-    data <- data.frame(actual = yval, pred = preds)
-    mape <- MLmetrics::MAPE(preds, yval)
-    print(mape)
-  })
+  # UNCOMMENT THIS CODE BLOCK TO PROFILE THE CODE AND SEE A PERFORMANCE ANALYSIS OF THE CODE
+  # profvis::profvis({
+  #   abalone <- read.csv(file='datasets/abalone.csv', header = FALSE)
+  #   xvals <- abalone[,-ncol(abalone)]
+  #   yval <- abalone[,ncol(abalone)]
+  #   LESS <- LESSRegressor$new(n_replications = 50, n_neighbors = 209, n_subsets=19, local_estimator = LinearRegression$new(), global_estimator = LinearRegression$new())
+  #   preds <- LESS$fit(xvals, yval)$predict(xvals)
+  #   data <- data.frame(actual = yval, pred = preds)
+  #   mape <- MLmetrics::MAPE(preds, yval)
+  #   print(mape)
+  # })
 
-  # abalone <- read.csv(file='datasets/abalone.csv', header = FALSE)
-  # xvals <- abalone[,-ncol(abalone)]
-  # yval <- abalone[,ncol(abalone)]
-  # LESS <- LESSRegressor$new(n_replications = 5, n_neighbors = 209, n_subsets=19, local_estimator = LinearRegression$new(), global_estimator = LinearRegression$new())
-  # preds <- LESS$fit(xvals, yval)$predict(xvals)
-  # data <- data.frame(actual = yval, pred = preds)
-  # mape <- MLmetrics::MAPE(preds, yval)
-  # print(mape)
+  abalone <- read.csv(file='datasets/abalone.csv', header = FALSE)
+  xvals <- abalone[,-ncol(abalone)]
+  yval <- abalone[,ncol(abalone)]
+  LESS <- LESSRegressor$new(n_replications = 5, n_neighbors = 209, n_subsets=19, local_estimator = LinearRegression$new(), global_estimator = LinearRegression$new())
+  preds <- LESS$fit(xvals, yval)$predict(xvals)
+  data <- data.frame(actual = yval, pred = preds)
+  mape <- MLmetrics::MAPE(preds, yval)
+  print(mape)
 
 }
