@@ -1,3 +1,7 @@
+####################
+# HELPER CLASSES
+####################
+
 SklearnEstimator <- R6::R6Class(classname = "SklearnEstimator",
                                 public = list(
                                   random_state = NULL,
@@ -23,7 +27,6 @@ SklearnEstimator <- R6::R6Class(classname = "SklearnEstimator",
                                     }
                                     return(names(fieldList))
                                   },
-
                                   get_attributes = function(){
                                     values <- purrr::map(self$public_fields(), ~.subset2(self, .x))
                                     names(values) <- self$public_fields()
@@ -57,6 +60,7 @@ Replication <- R6::R6Class(classname = "Replication",
 LinearRegression <- R6::R6Class(classname = "LinearRegression",
                                 inherit = SklearnEstimator,
                                 public = list(
+                                  estimator_type = "regressor",
                                   model = NULL,
                                   fit = function(X, y) {
                                     df <- prepareDataset(X, y)
@@ -76,6 +80,7 @@ LinearRegression <- R6::R6Class(classname = "LinearRegression",
 DecisionTreeRegressor <- R6::R6Class(classname = "DecisionTreeRegressor",
                                      inherit = SklearnEstimator,
                                      public = list(
+                                       estimator_type = "regressor",
                                        model = NULL,
                                        fit = function(X, y) {
                                          df <- prepareDataset(X, y)
@@ -146,9 +151,23 @@ RandomGenerator <- R6::R6Class(classname = "RandomGenerator",
                                    # size: a non-negative integer giving the number of items to choose
                                    set.seed(self$random_state)
                                    sample(range, size = size)
+                                 },
+                                 integers = function() {
+                                   # to be implemented
                                  }
                                ))
 
+LESSWarn <- R6::R6Class(classname = "LESSWarn",
+                        public = list(
+                          initialize = function(msg = "", flag = TRUE){
+                            if(flag){
+                              warning(msg)
+                            }
+                          }
+                        ))
+
+####################
+# HELPER FUNCTIONS
 ####################
 
 #' RBF kernel - L2 norm
@@ -182,6 +201,21 @@ prepareXset = function(X) {
   colnames(df) <- colX
   df
 }
+
+# checks if the input estimator's type is regressor
+is_regressor = function(estimator) {
+  estimator$estimator_type == "regressor"
+}
+
+# checks if the input estimator's type is classifier
+is_classifier = function(estimator) {
+  estimator$estimator_type == "classifier"
+}
+
+# returns the class name of the input object
+getClassName = function(obj) {
+  class(obj)[1]
+}
 ###################
 
 xData=c(151, 174, 138, 186, 128, 136, 179, 163, 152, 131)
@@ -203,14 +237,101 @@ LESSBase <- R6::R6Class(classname = "LESSBase",
                           self$isFitted = isFitted
                         },
                         set_local_attributes = function() {
-                          print("to be done")
+                          if(is.null(self$local_estimator)){
+                            stop("LESS does not work without a local estimator.")
+                          }
+
+                          if(is_classifier(self$local_estimator)){
+                            LESSWarn$new("LESS might work with local classifiers.\n--However, we recommend using regressors as the local estimators.",
+                                         self$warnings)
+                          }
+
+                          if(getClassName(self) == "LESSRegressor" & is_classifier(self$global_estimator)){
+                            LESSWarn$new("LESSRegressor might work with a global classifier.\n--However, we recommend using a regressor as the global estimator.",
+                                         self$warnings)
+                          }
+
+                          if(getClassName(self) == "LESSClassifier" & is_regressor(self$global_estimator)){
+                            LESSWarn$new("LESSClassifier might work with a global regressor.\n--However, we recommend using a classifier as the global estimator.",
+                                         self$warnings)
+                          }
+
+                          if(!is.na(self$val_size)) {
+                            if(self$val_size <= 0.0 | self$val_size >= 1.0){
+                              stop("Parameter val_size should be in the interval (0, 1).")
+                            }
+                          }
+
+                          if(!is.na(self$frac)) {
+                            if(self$frac <= 0.0 | self$frac >= 1.0){
+                              stop("Parameter frac should be in the interval (0, 1).")
+                            }
+                          }
+
+                          if(self$n_replications < 1){
+                            stop("The number of replications should greater than equal to one.")
+                          }
+
+                          if(!is.na(self$cluster_method)){
+                            # FIXME
+                            # to be implemented
+                          }else if(is.na(self$frac) &
+                                   is.na(self$n_neighbors) &
+                                   is.na(self$n_subsets)){
+                            self$frac = 0.05
+                          }
+                        },
+
+                        check_input = function(len_X) {
+                          if(is.na(self$cluster_method)){
+                            if(!is.na(self$frac)){
+                              self$n_neighbors <- as.integer(ceiling(self$frac * len_X))
+                              self$n_subsets <- as.integer(len_X/self$n_neighbors)
+                            }
+
+                            if(is.na(self$n_subsets)){
+                              self$n_subsets <- as.integer(len_X/self$n_neighbors)
+                            }
+
+                            if(is.na(self$n_neighbors)){
+                              self$neighbors <- as.integer(len_X/self$n_subsets)
+                            }
+
+                            if(self$n_neighbors > len_X){
+                              LESSWarn$new("The number of neighbors is larger than the number of samples. \n--Setting number of subsets to one.",
+                                           self$warnings)
+                              self$n_neighbors <- len_X
+                              self$n_subsets <- 1
+                            }
+
+                            if(self$n_subsets > len_X){
+                              LESSWarn$new("The number of subsets is larger than the number of samples. \n--Setting number of neighbors to one.",
+                                           self$warnings)
+                              self$n_neighbors <- 1
+                              self$n_subsets <- len_X
+                            }
+
+                            if(self$n_subsets == 1){
+                              LESSWarn$new("There is only one subset, so the global estimator is set to NULL",
+                                           self$warnings)
+                              self$global_estimator <- NULL
+                              self$d_normalize <- TRUE
+                              # If there is also no validation step, then there is
+                              # no randomness. So, no need for replications.
+                              if(is.na(self$val_size)){
+                                LESSWarn$new("Since validation set is not used, there is no randomness. \n--Thus, the number of replications is set to one.",
+                                             self$warnings)
+                                self$n_replications = 1
+                              }
+                            }
+                          }
                         },
 
                         fitnoval = function(X, y) {
                           #' Fit function: All data is used with the global estimator (no validation)
                           #' Tree method is used (no clustering)
                           len_X <- length(y)
-                          #FIXME check_input
+                          self$check_input(len_X)
                           self$replications <- list()
                           for (i in 1:self$n_replications) {
                             # set.seed(self$random_state) # set seed each time so
@@ -287,6 +408,7 @@ LESSBase <- R6::R6Class(classname = "LESSBase",
 LESSRegressor <- R6::R6Class(classname = "LESSRegressor",
                              inherit = LESSBase,
                              public = list(
+                               frac = NULL,
                                n_replications = NULL,
                                random_state = NULL,
                                n_subsets = NULL,
@@ -298,9 +420,12 @@ LESSRegressor <- R6::R6Class(classname = "LESSRegressor",
                                cluster_method = NULL,
                                distance_function = NULL,
                                rng = NULL,
-                               initialize = function(n_replications = 5, random_state = NULL, n_subsets = 2, n_neighbors = 5,
-                                                     local_estimator = NA, d_normalize = TRUE, global_estimator = NA, scaling = TRUE,
-                                                     cluster_method = NA, distance_function = NA) {
+                               warnings = NULL,
+                               val_size = NULL,
+                               initialize = function(frac = 0.05, n_replications = 5, random_state = NULL, n_subsets = 2, n_neighbors = 5,
+                                                     local_estimator = LinearRegression$new(), d_normalize = TRUE, global_estimator = LinearRegression$new(), scaling = TRUE,
+                                                     cluster_method = NA, distance_function = NA, warnings = TRUE, val_size = NA) {
+                                 self$frac = frac
                                  self$n_replications = n_replications
                                  self$random_state = random_state
                                  self$n_subsets = n_subsets
@@ -312,9 +437,12 @@ LESSRegressor <- R6::R6Class(classname = "LESSRegressor",
                                  self$cluster_method = cluster_method
                                  self$distance_function = distance_function
                                  self$rng = RandomGenerator$new(random_state = self$random_state)
+                                 self$warnings = warnings
+                                 self$val_size = val_size
                                },
                                fit = function(X, y){
                                  # FIXME check operations
+                                 self$set_local_attributes()
 
                                  if(self$scaling){
                                    self$scobject <- StandardScaler$new()
@@ -414,7 +542,7 @@ linReg <- function() {
   abalone <- read.csv(file='datasets/abalone.csv', header = FALSE)
   xvals <- abalone[,-ncol(abalone)]
   yval <- abalone[,ncol(abalone)]
-  LESS <- LESSRegressor$new(n_replications = 5, n_neighbors = 209, n_subsets=19, local_estimator = LinearRegression$new(), global_estimator = LinearRegression$new())
+  LESS <- LESSRegressor$new()
   preds <- LESS$fit(xvals, yval)$predict(xvals)
   data <- data.frame(actual = yval, pred = preds)
   mape <- MLmetrics::MAPE(preds, yval)
