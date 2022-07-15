@@ -14,9 +14,11 @@ Imports:
     bench,
     methods,
     MLmetrics,
+    party,
     profvis,
     R6,
     RANN,
     rpart,
     rpart.plot,
+    tree,
     wordspace

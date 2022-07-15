@@ -77,6 +77,29 @@ LinearRegression <- R6::R6Class(classname = "LinearRegression",
                                 )
                                 )
 
+# Decision Tree wrapper class with using rpart package
+# DecisionTreeRegressor <- R6::R6Class(classname = "DecisionTreeRegressor",
+#                                      inherit = SklearnEstimator,
+#                                      public = list(
+#                                        estimator_type = "regressor",
+#                                        model = NULL,
+#                                        fit = function(X, y) {
+#                                          df <- prepareDataset(X, y)
+#                                          self$model <- rpart::rpart(y ~ ., method = "anova", data = df, control = rpart::rpart.control(minsplit = 2, minbucket = 1))
+#                                          rpart.plot::rpart.plot(self$model)
+#                                          invisible(self)
+#                                          # print("model: ")
+#                                          # summary(model)
+#
+#                                        },
+#                                        predict = function(X) {
+#                                          data <- prepareXset(X)
+#                                          predict(self$model, data, method = "anova")
+#                                        }
+#                                      )
+#                                      )
+
+# Decision Tree wrapper class with using party package
 DecisionTreeRegressor <- R6::R6Class(classname = "DecisionTreeRegressor",
                                      inherit = SklearnEstimator,
                                      public = list(
@@ -84,15 +107,16 @@ DecisionTreeRegressor <- R6::R6Class(classname = "DecisionTreeRegressor",
                                        model = NULL,
                                        fit = function(X, y) {
                                          df <- prepareDataset(X, y)
-                                         self$model <- rpart::rpart(y ~ ., method = "anova", data = df)
+                                         self$model <- party::ctree(
+                                           y ~ .,
+                                           data = df,
+                                           controls = party::ctree_control(minsplit = 2, minbucket = 1))
+                                         # plot(self$model)
                                          invisible(self)
-                                         # print("model: ")
-                                         # summary(model)
-                                         # rpart.plot::rpart.plot(model)
                                        },
                                        predict = function(X) {
                                          data <- prepareXset(X)
-                                         predict(self$model, data, method = "anova")
+                                         predict(self$model, data)
                                        }
                                      )
                                      )
@@ -134,17 +158,6 @@ RandomGenerator <- R6::R6Class(classname = "RandomGenerator",
                                  random_state = NULL,
                                  initialize = function(random_state){
                                    self$random_state = random_state
-
-                                   # if(!is.null(random_state)){ # check if the input random_state is an integer
-                                   #   if(random_state%%1!=0){
-                                   #     # FIXME
-                                   #     warning("a non-integer value is assigned as random_state. A random integer is being assigned instead...")
-                                   #     self$random_state = sample.int(as.integer(.Machine$integer.max), 1)
-                                   #   }
-                                   # }
-                                   # else{
-                                   #   self$random_state = random_state
-                                   # }
                                  },
                                  choice = function(range, size){
                                    # range: sampling takes place from 1:range
@@ -165,6 +178,18 @@ LESSWarn <- R6::R6Class(classname = "LESSWarn",
                             }
                           }
                         ))
+
+KDTree <- R6::R6Class(classname = "KDTree",
+                      public = list(
+                        X = NULL,
+                        initialize = function(X = NA) {
+                          self$X = X
+                        },
+                        query = function(query_X, k=1){
+                          # query the tree for the k nearest neighbors
+                          RANN::nn2(data = self$X, query = query_X, k = k)
+                        }
+                      ))
 
 ####################
 # HELPER FUNCTIONS
@@ -215,6 +240,19 @@ is_classifier = function(estimator) {
 # returns the class name of the input object
 getClassName = function(obj) {
   class(obj)[1]
+}
+
+train_test_split = function(data, test_size=0.3, seed=NULL){
+  set.seed(seed)
+  sample <- sample.int(n = nrow(data), size = floor(.7*nrow(data)), replace = F)
+  train <- data[sample, ]
+  test  <- data[-sample, ]
+
+  X_train <- train[,-ncol(train)]
+  y_train <- train[,ncol(train)]
+  X_test <- test[,-ncol(test)]
+  y_test <- test[,ncol(test)]
+  return(c(X_train, X_test, y_train, y_test))
 }
 ###################
 
@@ -332,11 +370,12 @@ LESSBase <- R6::R6Class(classname = "LESSBase",
                           #' Tree method is used (no clustering)
                           len_X <- length(y)
                           self$check_input(len_X)
+                          tree <- self$tree_method(X)
                           self$replications <- list()
                           for (i in 1:self$n_replications) {
                             # set.seed(self$random_state) # set seed each time so
                             sample_indices <- self$rng$choice(range = len_X, size = self$n_subsets)
-                            nearest_neighbors <- RANN::nn2(data = X, query = X[sample_indices,], k = self$n_neighbors)
+                            nearest_neighbors <- tree$query(X[sample_indices,], self$n_neighbors)
                             neighbor_indices_list <- nearest_neighbors[[1]]
 
                             local_models <- list() # List[LocalModel]
@@ -422,9 +461,10 @@ LESSRegressor <- R6::R6Class(classname = "LESSRegressor",
                                rng = NULL,
                                warnings = NULL,
                                val_size = NULL,
-                               initialize = function(frac = 0.05, n_replications = 5, random_state = NULL, n_subsets = 2, n_neighbors = 5,
-                                                     local_estimator = LinearRegression$new(), d_normalize = TRUE, global_estimator = LinearRegression$new(), scaling = TRUE,
-                                                     cluster_method = NA, distance_function = NA, warnings = TRUE, val_size = NA) {
+                               tree_method = NULL,
+                               initialize = function(frac = 0.05, n_replications = 20, random_state = NULL, n_subsets = NA, n_neighbors = NA,
+                                                     local_estimator = LinearRegression$new(), d_normalize = TRUE, global_estimator = DecisionTreeRegressor$new(), scaling = TRUE,
+                                                     cluster_method = NA, distance_function = NA, warnings = TRUE, val_size = NA, tree_method = function(X) KDTree$new(X)) {
                                  self$frac = frac
                                  self$n_replications = n_replications
                                  self$random_state = random_state
@@ -439,6 +479,7 @@ LESSRegressor <- R6::R6Class(classname = "LESSRegressor",
                                  self$rng = RandomGenerator$new(random_state = self$random_state)
                                  self$warnings = warnings
                                  self$val_size = val_size
+                                 self$tree_method = tree_method
                                },
                                fit = function(X, y){
                                  # FIXME check operations
@@ -526,22 +567,57 @@ lessReg <- function() {
   # UNCOMMENT THIS CODE BLOCK TO PROFILE THE CODE AND SEE A PERFORMANCE ANALYSIS OF THE CODE
   # profvis::profvis({
   #   abalone <- read.csv(file='datasets/abalone.csv', header = FALSE)
-  #   xvals <- abalone[,-ncol(abalone)]
-  #   yval <- abalone[,ncol(abalone)]
-  #   LESS <- LESSRegressor$new(n_replications = 50, n_neighbors = 209, n_subsets=19, local_estimator = LinearRegression$new(), global_estimator = LinearRegression$new())
-  #   preds <- LESS$fit(xvals, yval)$predict(xvals)
-  #   data <- data.frame(actual = yval, pred = preds)
-  #   mape <- MLmetrics::MAPE(preds, yval)
+  #
+  #   # Now Selecting 70% of data as sample from total 'n' rows of the data
+  #   sample <- sample.int(n = nrow(abalone), size = floor(.7*nrow(abalone)), replace = F)
+  #   train <- abalone[sample, ]
+  #   test  <- abalone[-sample, ]
+  #
+  #   X_train <- train[,-ncol(train)]
+  #   y_train <- train[,ncol(train)]
+  #   X_test <- test[,-ncol(test)]
+  #   y_test <- test[,ncol(test)]
+  #
+  #   # xvals <- abalone[,-ncol(abalone)]
+  #   # yval <- abalone[,ncol(abalone)]
+  #   LESS <- LESSRegressor$new()
+  #   preds <- LESS$fit(X_train, y_train)$predict(X_test)
+  #
+  #   # print(head(matrix(c(y_test, preds), ncol = 2)))
+  #   mape <- MLmetrics::MAPE(preds, y_test)
   #   print(mape)
   # })
 
-  abalone <- read.csv(file='datasets/abalone.csv', header = FALSE)
-  xvals <- abalone[,-ncol(abalone)]
-  yval <- abalone[,ncol(abalone)]
-  LESS <- LESSRegressor$new()
-  preds <- LESS$fit(xvals, yval)$predict(xvals)
+  data <- read.csv(file='datasets/superconduct.csv', header = FALSE)
 
-  mape <- MLmetrics::MAPE(preds, yval)
-  print(mape)
+  # Now Selecting 70% of data as sample from total 'n' rows of the data
+  sample <- sample.int(n = nrow(data), size = floor(.7*nrow(data)), replace = F)
+  train <- data[sample, ]
+  test  <- data[-sample, ]
+
+  X_train <- train[,-ncol(train)]
+  y_train <- train[,ncol(train)]
+  X_test <- test[,-ncol(test)]
+  y_test <- test[,ncol(test)]
+
+  # xvals <- abalone[,-ncol(abalone)]
+  # yval <- abalone[,ncol(abalone)]
+  # LESS <- LESSRegressor$new()
+  #
+  # preds <- LESS$fit(X_train, y_train)$predict(X_test)
+  #
+  # print(head(matrix(c(y_test, preds), ncol = 2)))
+  # mape <- MLmetrics::MAPE(preds, y_test)
+  # print(mape)
+
+  #UNCOMMENT THIS CODE BLOCK TO SEE ERROR COMPARISON BETWEEN DIFFERENT ESTIMATORS
+  models <- list(LESSRegressor$new(),
+                 LinearRegression$new(),
+                 DecisionTreeRegressor$new())
+  for(model in models){
+    preds <- model$fit(X_train, y_train)$predict(X_test)
+    mape <- MLmetrics::MSE(preds, y_test)
+    cat(getClassName(model), " MSE: ", mape, "\n")
+  }
 
 }
