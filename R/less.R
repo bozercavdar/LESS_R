@@ -1,11 +1,30 @@
 ####################
 # HELPER CLASSES
 ####################
+BaseEstimator <- R6::R6Class(classname = "BaseEstimator",
+                             public = list(
+                               public_fields = function(){
+                                 classList <- class(self)[-length(class(self))]
+                                 classNum <- length(classList)
+                                 fieldList <- list()
+                                 for (i in 1:classNum) {
+                                   fields <- get(class(self)[i])$public_fields
+                                   fieldList <- append(fieldList, fields)
+                                 }
+                                 return(names(fieldList))
+                               },
+                               get_attributes = function(){
+                                 values <- purrr::map(self$public_fields(), ~.subset2(self, .x))
+                                 names(values) <- self$public_fields()
+                                 return(values)
+                               }
+                             ))
 
 SklearnEstimator <- R6::R6Class(classname = "SklearnEstimator",
+                                inherit = BaseEstimator,
                                 public = list(
                                   random_state = NULL,
-                                  initialize = function(random_state = NA) {
+                                  initialize = function(random_state = NULL) {
                                     self$random_state = random_state
                                   },
                                   fit = function() {
@@ -16,21 +35,6 @@ SklearnEstimator <- R6::R6Class(classname = "SklearnEstimator",
                                   predict = function(){
                                     print("dummy predict function")
                                     invisible(self)
-                                  },
-                                  public_fields = function(){
-                                    classList <- class(self)[-length(class(self))]
-                                    classNum <- length(classList)
-                                    fieldList <- list()
-                                    for (i in 1:classNum) {
-                                      fields <- get(class(self)[i])$public_fields
-                                      fieldList <- append(fieldList, fields)
-                                    }
-                                    return(names(fieldList))
-                                  },
-                                  get_attributes = function(){
-                                    values <- purrr::map(self$public_fields(), ~.subset2(self, .x))
-                                    names(values) <- self$public_fields()
-                                    return(values)
                                   }
                                 )
                                 )
@@ -195,6 +199,31 @@ KDTree <- R6::R6Class(classname = "KDTree",
                         }
                       ))
 
+KMeans <- R6::R6Class(classname = "KMeans",
+                      inherit = BaseEstimator,
+                      public = list(
+                        model = NULL,
+                        n_clusters = NULL,
+                        n_init = NULL,
+                        max_iter = NULL,
+                        cluster_centers = NULL,
+                        labels = NULL,
+                        random_state = NULL,
+                        initialize = function(n_clusters = 8, n_init = 10, max_iter = 300, random_state = NULL){
+                          self$n_clusters = n_clusters
+                          self$n_init = n_init
+                          self$max_iter = max_iter
+                          self$random_state = random_state
+                        },
+                        fit = function(X){
+                          set.seed(self$random_state)
+                          self$model <- kmeans(X, centers = self$n_cluster, iter.max = self$max_iter, nstart = self$n_init)
+                          self$cluster_centers <- self$model$centers
+                          self$labels <- self$model$cluster
+                          invisible(self)
+                        }
+                      ))
+
 ####################
 # HELPER FUNCTIONS
 ####################
@@ -256,7 +285,7 @@ train_test_split = function(data, test_size=0.3, seed=NULL){
   y_train <- train[,ncol(train)]
   X_test <- test[,-ncol(test)]
   y_test <- test[,ncol(test)]
-  return(c(X_train, X_test, y_train, y_test))
+  return(list(X_train, X_test, y_train, y_test))
 }
 ###################
 
@@ -372,12 +401,11 @@ LESSBase <- R6::R6Class(classname = "LESSBase",
                           tree <- self$tree_method(X)
                           self$replications <- list()
                           for (i in 1:self$n_replications) {
-                            # set.seed(self$random_state) # set seed each time so
                             sample_indices <- self$rng$choice(range = len_X, size = self$n_subsets)
                             nearest_neighbors <- tree$query(X[sample_indices,], self$n_neighbors)
                             neighbor_indices_list <- nearest_neighbors[[1]]
 
-                            local_models <- list() # List[LocalModel]
+                            local_models <- list()
                             dists <- matrix(0, len_X, self$n_subsets)
                             predicts <- matrix(0, len_X, self$n_subsets)
 
@@ -399,7 +427,6 @@ LESSBase <- R6::R6Class(classname = "LESSBase",
                               }
                               local_models <- append(local_models, LocalModel$new(estimator = local_model, center = local_center))
 
-                              # predicts[,i] <- self$local_estimator$predict(X)
                               predicts[,i] <- local_model$predict(X)
                               if(is.na(self$distance_function)) {
                                 dists[,i] <- rbf(X, local_center, 1.0/(self$n_subsets ^ 2.0))
@@ -438,6 +465,178 @@ LESSBase <- R6::R6Class(classname = "LESSBase",
                           }
 
                           invisible(self)
+                        },
+
+                        fitval = function(X, y) {
+                          # Fit function: (val_size x data) is used for the global estimator (validation)
+                          # Tree method is used (no clustering)
+
+                          self$replications <- list()
+                          for (i in 1:self$n_replications) {
+                            #Split for global estimation
+                            split_list <- train_test_split(cbind(X, y), test_size =  self$val_size)
+                            X_train <- split_list[[1]]
+                            X_val <- split_list[[2]]
+                            y_train <- split_list[[3]]
+                            y_val <- split_list[[4]]
+
+                            len_X_val <- nrow(X_val)
+                            len_X_train <- nrow(X_train)
+                            # Check the validity of the input
+                            if(i == 1){
+                              self$check_input(len_X_train)
+                            }
+
+                            # A nearest neighbor tree is grown for querying
+                            tree <- self$tree_method(X_train)
+
+                            # Select n_subsets many samples to construct the local sample sets
+                            sample_indices <- self$rng$choice(range = len_X_train, size = self$n_subsets)
+                            # Construct the local sample sets
+                            nearest_neighbors <- tree$query(X[sample_indices,], self$n_neighbors)
+                            neighbor_indices_list <- nearest_neighbors[[1]]
+
+                            local_models <- list()
+                            dists <- matrix(0, len_X_val, self$n_subsets)
+                            predicts <- matrix(0, len_X_val, self$n_subsets)
+
+                            for (i in 1:nrow(neighbor_indices_list)) {
+                              Xneighbors <- as.matrix(X_train[neighbor_indices_list[i, ],])
+                              yneighbors <- as.matrix(y_train[neighbor_indices_list[i, ]])
+
+                              # Centroid is used as the center of the local sample set
+                              local_center = colMeans(Xneighbors)
+
+                              local_model <- NULL
+                              #if random_state is set
+                              if(!is.na(self$local_estimator$get_attributes()$random_state)) {
+                                # FIXME
+                                # self$local_estimator$random_state <-
+                                local_model <- self$local_estimator$fit(Xneighbors, yneighbors)$clone()
+                              }else{
+                                local_model <- self$local_estimator$fit(Xneighbors, yneighbors)$clone()
+                              }
+                              local_models <- append(local_models, LocalModel$new(estimator = local_model, center = local_center))
+
+                              predicts[,i] <- local_model$predict(X_val)
+                              if(is.na(self$distance_function)) {
+                                dists[,i] <- rbf(X_val, local_center, 1.0/(self$n_subsets ^ 2.0))
+                              }else {
+                                # FIXME add distance function instead of rbf function
+                                dists[,i] <- rbf(X_val, local_center, 1.0/(self$n_subsets ^ 2.0))
+                              }
+                            }
+
+
+                            if(self$d_normalize) {
+                              denom <- rowSums(dists)
+                              denom[denom < 1e-08] <- 1e-08
+                              dists <- t(t(dists)/denom)
+                            }
+
+                            Z <- dists * predicts
+                            scobject <- StandardScaler$new()
+                            if(self$scaling){
+                              Z <- scobject$fit_transform(Z)
+                            }
+
+                            global_model <- NULL
+                            # if(Reduce('|', is.na(self$global_estimator)))
+                            if(length(self$global_estimator) != 0){ #for a null environment, the length is 0
+                              if(!is.na(self$global_estimator$get_attributes()$random_state)){
+                                # FIXME add random state
+                                global_model <- self$global_estimator$fit(Z, y_val)$clone()
+                              }else{
+                                global_model <- self$global_estimator$fit(Z, y_val)$clone()
+                              }
+                            }
+                            self$replications <- append(self$replications, Replication$new(local_estimators = local_models,
+                                                                                           sc_object = scobject,
+                                                                                           global_estimator = global_model))
+                          }
+                          invisible(self)
+                        },
+
+                        fitnovalc = function(X, y){
+                          # Fit function: All data is used for the global estimator (no validation)
+                          # Clustering is used (no tree method)
+
+                          len_X <- length(y)
+                          # Check the validity of the input
+                          self$check_input(len_X)
+
+                          tree <- self$tree_method(X)
+                          self$replications <- list()
+                          for (i in 1:self$n_replications) {
+                            sample_indices <- self$rng$choice(range = len_X, size = self$n_subsets)
+                            nearest_neighbors <- tree$query(X[sample_indices,], self$n_neighbors)
+                            neighbor_indices_list <- nearest_neighbors[[1]]
+
+                            local_models <- list()
+                            dists <- matrix(0, len_X, self$n_subsets)
+                            predicts <- matrix(0, len_X, self$n_subsets)
+
+                            for (i in 1:nrow(neighbor_indices_list)) {
+                              Xneighbors <- as.matrix(X[neighbor_indices_list[i, ],])
+                              yneighbors <- as.matrix(y[neighbor_indices_list[i, ]])
+
+                              # Centroid is used as the center of the local sample set
+                              local_center = colMeans(Xneighbors)
+
+                              local_model <- NULL
+                              #if random_state is set
+                              if(!is.na(self$local_estimator$get_attributes()$random_state)) {
+                                # FIXME
+                                # self$local_estimator$random_state <-
+                                local_model <- self$local_estimator$fit(Xneighbors, yneighbors)$clone()
+                              }else{
+                                local_model <- self$local_estimator$fit(Xneighbors, yneighbors)$clone()
+                              }
+                              local_models <- append(local_models, LocalModel$new(estimator = local_model, center = local_center))
+
+                              predicts[,i] <- local_model$predict(X)
+                              if(is.na(self$distance_function)) {
+                                dists[,i] <- rbf(X, local_center, 1.0/(self$n_subsets ^ 2.0))
+                              }else {
+                                # FIXME add distance function instead of rbf function
+                                dists[,i] <- rbf(X, local_center, 1.0/(self$n_subsets ^ 2.0))
+                              }
+                            }
+
+
+                            if(self$d_normalize) {
+                              denom <- rowSums(dists)
+                              denom[denom < 1e-08] <- 1e-08
+                              dists <- t(t(dists)/denom)
+                            }
+
+                            Z <- dists * predicts
+                            scobject <- StandardScaler$new()
+                            if(self$scaling){
+                              Z <- scobject$fit_transform(Z)
+                            }
+
+                            global_model <- NULL
+                            # if(Reduce('|', is.na(self$global_estimator)))
+                            if(length(self$global_estimator) != 0){ #for a null environment, the length is 0
+                              if(!is.na(self$global_estimator$get_attributes()$random_state)){
+                                # FIXME add random state
+                                global_model <- self$global_estimator$fit(Z, y)$clone()
+                              }else{
+                                global_model <- self$global_estimator$fit(Z, y)$clone()
+                              }
+                            }
+                            self$replications <- append(self$replications, Replication$new(local_estimators = local_models,
+                                                                                           sc_object = scobject,
+                                                                                           global_estimator = global_model))
+                          }
+
+                          invisible(self)
+                        },
+
+                        print = function() {
+                          cat("Number of subsets: ", self$n_subsets, "\n")
+                          cat("Number of samples in each subset: ", self$n_neighbors, "\n")
                         }
                       )
                     )
@@ -488,7 +687,25 @@ LESSRegressor <- R6::R6Class(classname = "LESSRegressor",
                                    self$scobject <- StandardScaler$new()
                                    X <- self$scobject$fit_transform(X)
                                  }
-                                 self$fitnoval(X, y)
+
+                                 if(!is.na(self$val_size)){
+                                   # Validation set is not used for global estimation
+                                   if(is.na(self$cluster_method)){
+                                     self$fitval(X, y)
+                                   }
+                                   else{
+                                     self$fitvalc(X, y)
+                                   }
+                                 }
+                                 else{
+                                   # Validation set  not used for global estimation
+                                   if(is.na(self$cluster_method)){
+                                     self$fitnoval(X, y)
+                                   }
+                                   else{
+                                     self$fitnovalc(X, y)
+                                   }
+                                 }
                                  self$isFitted = TRUE
                                  invisible(self)
                                },
@@ -604,8 +821,10 @@ lessReg <- function() {
   # X_test <- test[,-1]
   # y_test <- test[,1]
 
-  LESS <- LESSRegressor$new()
+  cat("Total number of training samples: ", nrow(X_train), "\n")
+  LESS <- LESSRegressor$new(val_size = 0.3)
   preds <- LESS$fit(X_train, y_train)$predict(X_test)
+  print(LESS)
   print(head(matrix(c(y_test, preds), ncol = 2)))
   mape <- MLmetrics::MAPE(preds, y_test)
   print(mape)
