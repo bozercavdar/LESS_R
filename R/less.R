@@ -65,6 +65,10 @@ LinearRegression <- R6::R6Class(classname = "LinearRegression",
                                   fit = function(X, y) {
                                     df <- prepareDataset(X, y)
                                     self$model <- lm(y ~ ., data = df)
+                                    # if(length(self$model$coefficients) > self$model$rank){
+                                    #   print("rank deficient fit. number of parameters are more than the observations")
+                                    #   print(self$model$rank)
+                                    # }
                                     invisible(self)
                                   },
                                   predict = function(X) {
@@ -255,11 +259,6 @@ train_test_split = function(data, test_size=0.3, seed=NULL){
   return(c(X_train, X_test, y_train, y_test))
 }
 ###################
-
-xData=c(151, 174, 138, 186, 128, 136, 179, 163, 152, 131)
-yData=c(63, 81, 56, 91, 47, 57, 76, 72, 62, 48)
-
-####################
 
 LESSBase <- R6::R6Class(classname = "LESSBase",
                       inherit = SklearnEstimator,
@@ -588,7 +587,7 @@ lessReg <- function() {
   #   print(mape)
   # })
 
-  data <- read.csv(file='datasets/superconduct.csv', header = FALSE)
+  data <- read.csv(file='datasets/abalone.csv', header = FALSE)
 
   # Now Selecting 70% of data as sample from total 'n' rows of the data
   sample <- sample.int(n = nrow(data), size = floor(.7*nrow(data)), replace = F)
@@ -600,24 +599,25 @@ lessReg <- function() {
   X_test <- test[,-ncol(test)]
   y_test <- test[,ncol(test)]
 
-  # xvals <- abalone[,-ncol(abalone)]
-  # yval <- abalone[,ncol(abalone)]
-  # LESS <- LESSRegressor$new()
-  #
-  # preds <- LESS$fit(X_train, y_train)$predict(X_test)
-  #
-  # print(head(matrix(c(y_test, preds), ncol = 2)))
-  # mape <- MLmetrics::MAPE(preds, y_test)
-  # print(mape)
+  # X_train <- train[,-1]
+  # y_train <- train[,1]
+  # X_test <- test[,-1]
+  # y_test <- test[,1]
+
+  LESS <- LESSRegressor$new()
+  preds <- LESS$fit(X_train, y_train)$predict(X_test)
+  print(head(matrix(c(y_test, preds), ncol = 2)))
+  mape <- MLmetrics::MAPE(preds, y_test)
+  print(mape)
 
   #UNCOMMENT THIS CODE BLOCK TO SEE ERROR COMPARISON BETWEEN DIFFERENT ESTIMATORS
-  models <- list(LESSRegressor$new(),
-                 LinearRegression$new(),
-                 DecisionTreeRegressor$new())
-  for(model in models){
-    preds <- model$fit(X_train, y_train)$predict(X_test)
-    mape <- MLmetrics::MSE(preds, y_test)
-    cat(getClassName(model), " MSE: ", mape, "\n")
-  }
+  # models <- list(LESSRegressor$new(),
+  #                LinearRegression$new(),
+  #                DecisionTreeRegressor$new())
+  # for(model in models){
+  #   preds <- model$fit(X_train, y_train)$predict(X_test)
+  #   mape <- MLmetrics::MSE(preds, y_test)
+  #   cat(getClassName(model), " MSE: ", mape, "\n")
+  # }
 
 }
