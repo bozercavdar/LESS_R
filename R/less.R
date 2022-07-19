@@ -17,6 +17,10 @@ BaseEstimator <- R6::R6Class(classname = "BaseEstimator",
                                  values <- purrr::map(self$public_fields(), ~.subset2(self, .x))
                                  names(values) <- self$public_fields()
                                  return(values)
+                               },
+                               set_random_state = function(random_state){
+                                 self$random_state = random_state
+                                 invisible(self)
                                }
                              ))
 
@@ -173,8 +177,9 @@ RandomGenerator <- R6::R6Class(classname = "RandomGenerator",
                                    set.seed(self$random_state)
                                    sample(range, size = size)
                                  },
-                                 integers = function() {
-                                   # to be implemented
+                                 integers = function(range, size = 1) {
+                                   set.seed(self$random_state)
+                                   sample.int(range, size)
                                  }
                                ))
 
@@ -217,7 +222,7 @@ KMeans <- R6::R6Class(classname = "KMeans",
                         },
                         fit = function(X){
                           set.seed(self$random_state)
-                          self$model <- kmeans(X, centers = self$n_cluster, iter.max = self$max_iter, nstart = self$n_init)
+                          self$model <- kmeans(X, centers = self$n_clusters, iter.max = self$max_iter, nstart = self$n_init)
                           self$cluster_centers <- self$model$centers
                           self$labels <- self$model$cluster
                           invisible(self)
@@ -338,9 +343,11 @@ LESSBase <- R6::R6Class(classname = "LESSBase",
                             stop("The number of replications should greater than equal to one.")
                           }
 
-                          if(!is.na(self$cluster_method)){
+                          if(length(self$cluster_method) != 0){ #length of NULL is zero. if it is not a null environment(class), length is not zero
                             # FIXME
                             # to be implemented
+
+
                           }else if(is.na(self$frac) &
                                    is.na(self$n_neighbors) &
                                    is.na(self$n_subsets)){
@@ -349,7 +356,7 @@ LESSBase <- R6::R6Class(classname = "LESSBase",
                         },
 
                         check_input = function(len_X) {
-                          if(is.na(self$cluster_method)){
+                          if(length(self$cluster_method) == 0){
                             if(!is.na(self$frac)){
                               self$n_neighbors <- as.integer(ceiling(self$frac * len_X))
                               self$n_subsets <- as.integer(len_X/self$n_neighbors)
@@ -391,6 +398,9 @@ LESSBase <- R6::R6Class(classname = "LESSBase",
                               }
                             }
                           }
+                          else{
+                            self$n_subsets <- list()
+                          }
                         },
 
                         fitnoval = function(X, y) {
@@ -418,7 +428,7 @@ LESSBase <- R6::R6Class(classname = "LESSBase",
 
                               local_model <- NULL
                               #if random_state is set
-                              if(!is.na(self$local_estimator$get_attributes()$random_state)) {
+                              if(!is.null(self$local_estimator$get_attributes()$random_state)) {
                                 # FIXME
                                 # self$local_estimator$random_state <-
                                 local_model <- self$local_estimator$fit(Xneighbors, yneighbors)$clone()
@@ -452,7 +462,7 @@ LESSBase <- R6::R6Class(classname = "LESSBase",
                             global_model <- NULL
                             # if(Reduce('|', is.na(self$global_estimator)))
                             if(length(self$global_estimator) != 0){ #for a null environment, the length is 0
-                              if(!is.na(self$global_estimator$get_attributes()$random_state)){
+                              if(!is.null(self$global_estimator$get_attributes()$random_state)){
                                 # FIXME add random state
                                 global_model <- self$global_estimator$fit(Z, y)$clone()
                               }else{
@@ -509,7 +519,7 @@ LESSBase <- R6::R6Class(classname = "LESSBase",
 
                               local_model <- NULL
                               #if random_state is set
-                              if(!is.na(self$local_estimator$get_attributes()$random_state)) {
+                              if(!is.null(self$local_estimator$get_attributes()$random_state)) {
                                 # FIXME
                                 # self$local_estimator$random_state <-
                                 local_model <- self$local_estimator$fit(Xneighbors, yneighbors)$clone()
@@ -543,7 +553,7 @@ LESSBase <- R6::R6Class(classname = "LESSBase",
                             global_model <- NULL
                             # if(Reduce('|', is.na(self$global_estimator)))
                             if(length(self$global_estimator) != 0){ #for a null environment, the length is 0
-                              if(!is.na(self$global_estimator$get_attributes()$random_state)){
+                              if(!is.null(self$global_estimator$get_attributes()$random_state)){
                                 # FIXME add random state
                                 global_model <- self$global_estimator$fit(Z, y_val)$clone()
                               }else{
@@ -565,27 +575,55 @@ LESSBase <- R6::R6Class(classname = "LESSBase",
                           # Check the validity of the input
                           self$check_input(len_X)
 
-                          tree <- self$tree_method(X)
+                          if(!is.null(self$cluster_method$get_attributes()$random_state)){
+                            LESSWarn$new("Clustering method is not random,
+                            so there is no need for replications unless validaton set is used.
+                            The number of replications is set to one.", self$warnings)
+                            self$n_replications <- 1
+                          }
+
+                          if(self$n_replications == 1){
+                            cluster_fit <- self$cluster_method$fit(X)
+                          }
+
                           self$replications <- list()
                           for (i in 1:self$n_replications) {
-                            sample_indices <- self$rng$choice(range = len_X, size = self$n_subsets)
-                            nearest_neighbors <- tree$query(X[sample_indices,], self$n_neighbors)
-                            neighbor_indices_list <- nearest_neighbors[[1]]
+                            if(self$n_replications > 1){
+                              cluster_fit <- self$cluster_method$set_random_state(self$rng$integers(32767))$fit(X)
+                              # print(length(cluster_fit$labels))
+                            }
+                            unique_labels <- unique(cluster_fit$labels)
+                            # Some clustering methods may find less number of clusters than requested 'n_clusters'
+                            self$n_subsets <- append(self$n_subsets, length(unique_labels))
+                            n_subsets <- self$n_subsets[[i]]
 
                             local_models <- list()
-                            dists <- matrix(0, len_X, self$n_subsets)
-                            predicts <- matrix(0, len_X, self$n_subsets)
+                            dists <- matrix(0, len_X, n_subsets)
+                            predicts <- matrix(0, len_X, n_subsets)
 
-                            for (i in 1:nrow(neighbor_indices_list)) {
-                              Xneighbors <- as.matrix(X[neighbor_indices_list[i, ],])
-                              yneighbors <- as.matrix(y[neighbor_indices_list[i, ]])
+                            if(!is.null(cluster_fit$cluster_centers)){
+                              use_cluster_centers = TRUE
+                            }else{
+                              use_cluster_centers = FALSE
+                            }
+
+                            for (cluster_indx in 1:length(unique_labels)) {
+                              neighbor_indices <- cluster_fit$labels == unique_labels[[cluster_indx]]
+                              Xneighbors <- as.matrix(X[neighbor_indices, ], byrow = TRUE)
+                              yneighbors <- as.matrix(y[neighbor_indices])
+                              if(nrow(yneighbors) == 1){
+                                Xneighbors <- t(Xneighbors)
+                              }
 
                               # Centroid is used as the center of the local sample set
-                              local_center = colMeans(Xneighbors)
+                              if(use_cluster_centers){
+                                local_center <- cluster_fit$cluster_centers[cluster_indx, ]
+                              }else{
+                                local_center <- colMeans(Xneighbors)
+                              }
 
-                              local_model <- NULL
                               #if random_state is set
-                              if(!is.na(self$local_estimator$get_attributes()$random_state)) {
+                              if(!is.null(self$local_estimator$get_attributes()$random_state)) {
                                 # FIXME
                                 # self$local_estimator$random_state <-
                                 local_model <- self$local_estimator$fit(Xneighbors, yneighbors)$clone()
@@ -594,15 +632,14 @@ LESSBase <- R6::R6Class(classname = "LESSBase",
                               }
                               local_models <- append(local_models, LocalModel$new(estimator = local_model, center = local_center))
 
-                              predicts[,i] <- local_model$predict(X)
+                              predicts[, cluster_indx] <- local_model$predict(X)
                               if(is.na(self$distance_function)) {
-                                dists[,i] <- rbf(X, local_center, 1.0/(self$n_subsets ^ 2.0))
+                                dists[, cluster_indx] <- rbf(X, local_center, 1.0/(n_subsets ^ 2.0))
                               }else {
                                 # FIXME add distance function instead of rbf function
-                                dists[,i] <- rbf(X, local_center, 1.0/(self$n_subsets ^ 2.0))
+                                dists[, cluster_indx] <- rbf(X, local_center, 1.0/(n_subsets ^ 2.0))
                               }
                             }
-
 
                             if(self$d_normalize) {
                               denom <- rowSums(dists)
@@ -616,10 +653,9 @@ LESSBase <- R6::R6Class(classname = "LESSBase",
                               Z <- scobject$fit_transform(Z)
                             }
 
-                            global_model <- NULL
                             # if(Reduce('|', is.na(self$global_estimator)))
                             if(length(self$global_estimator) != 0){ #for a null environment, the length is 0
-                              if(!is.na(self$global_estimator$get_attributes()$random_state)){
+                              if(!is.null(self$global_estimator$get_attributes()$random_state)){
                                 # FIXME add random state
                                 global_model <- self$global_estimator$fit(Z, y)$clone()
                               }else{
@@ -635,7 +671,8 @@ LESSBase <- R6::R6Class(classname = "LESSBase",
                         },
 
                         print = function() {
-                          cat("Number of subsets: ", self$n_subsets, "\n")
+                          n_subsets <- unlist(self$n_subsets)
+                          cat("Number of subsets: ", n_subsets, "\n")
                           cat("Number of samples in each subset: ", self$n_neighbors, "\n")
                         }
                       )
@@ -662,7 +699,7 @@ LESSRegressor <- R6::R6Class(classname = "LESSRegressor",
                                tree_method = NULL,
                                initialize = function(frac = 0.05, n_replications = 20, random_state = NULL, n_subsets = NA, n_neighbors = NA,
                                                      local_estimator = LinearRegression$new(), d_normalize = TRUE, global_estimator = DecisionTreeRegressor$new(), scaling = TRUE,
-                                                     cluster_method = NA, distance_function = NA, warnings = TRUE, val_size = NA, tree_method = function(X) KDTree$new(X)) {
+                                                     cluster_method = NULL, distance_function = NA, warnings = TRUE, val_size = NA, tree_method = function(X) KDTree$new(X)) {
                                  self$frac = frac
                                  self$n_replications = n_replications
                                  self$random_state = random_state
@@ -690,7 +727,7 @@ LESSRegressor <- R6::R6Class(classname = "LESSRegressor",
 
                                  if(!is.na(self$val_size)){
                                    # Validation set is not used for global estimation
-                                   if(is.na(self$cluster_method)){
+                                   if(length(self$cluster_method) == 0){
                                      self$fitval(X, y)
                                    }
                                    else{
@@ -699,7 +736,7 @@ LESSRegressor <- R6::R6Class(classname = "LESSRegressor",
                                  }
                                  else{
                                    # Validation set  not used for global estimation
-                                   if(is.na(self$cluster_method)){
+                                   if(length(self$cluster_method) == 0){
                                      self$fitnoval(X, y)
                                    }
                                    else{
@@ -727,7 +764,7 @@ LESSRegressor <- R6::R6Class(classname = "LESSRegressor",
                                    local_models <- self$replications[[i]]$local_estimators
 
                                    n_subsets <- NULL
-                                   if(is.na(self$cluster_method)){
+                                   if(length(self$cluster_method) == 0){
                                      n_subsets <- self$n_subsets
                                    }else{
                                      n_subsets <- self$n_subsets[[i]]
@@ -822,12 +859,13 @@ lessReg <- function() {
   # y_test <- test[,1]
 
   cat("Total number of training samples: ", nrow(X_train), "\n")
-  LESS <- LESSRegressor$new(val_size = 0.3)
+  LESS <- LESSRegressor$new(cluster_method = KMeans$new(), random_state = 100)
   preds <- LESS$fit(X_train, y_train)$predict(X_test)
   print(LESS)
   print(head(matrix(c(y_test, preds), ncol = 2)))
   mape <- MLmetrics::MAPE(preds, y_test)
   print(mape)
+
 
   #UNCOMMENT THIS CODE BLOCK TO SEE ERROR COMPARISON BETWEEN DIFFERENT ESTIMATORS
   # models <- list(LESSRegressor$new(),
