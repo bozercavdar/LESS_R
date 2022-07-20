@@ -599,6 +599,7 @@ LESSBase <- R6::R6Class(classname = "LESSBase",
                           # Check the validity of the input
                           self$check_input(len_X)
 
+                          #FIXME make it same as the original code
                           if(!is.null(self$cluster_method$get_attributes()$random_state)){
                             LESSWarn$new("Clustering method is not random,
                             so there is no need for replications unless validaton set is used.
@@ -747,7 +748,7 @@ LESSRegressor <- R6::R6Class(classname = "LESSRegressor",
                                  self$tree_method = tree_method
                                },
                                fit = function(X, y){
-                                 # FIXME check operations
+                                 # FIXME check_X_y()
                                  self$set_local_attributes()
 
                                  if(self$scaling){
