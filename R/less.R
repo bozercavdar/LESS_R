@@ -27,10 +27,6 @@ BaseEstimator <- R6::R6Class(classname = "BaseEstimator",
 SklearnEstimator <- R6::R6Class(classname = "SklearnEstimator",
                                 inherit = BaseEstimator,
                                 public = list(
-                                  random_state = NULL,
-                                  initialize = function(random_state = NULL) {
-                                    self$random_state = random_state
-                                  },
                                   fit = function() {
                                     #maybe check for
                                     print("dummy fit function")
@@ -168,18 +164,40 @@ StandardScaler <- R6::R6Class(classname = "StandardScaler",
 RandomGenerator <- R6::R6Class(classname = "RandomGenerator",
                                public = list(
                                  random_state = NULL,
+                                 index = NULL,
                                  initialize = function(random_state){
                                    self$random_state = random_state
+                                   self$index = 1
                                  },
                                  choice = function(range, size){
                                    # range: sampling takes place from 1:range
                                    # size: a non-negative integer giving the number of items to choose
                                    set.seed(self$random_state)
-                                   sample(range, size = size)
+                                   permutation <- sample(range)
+
+                                   # this part helps if the index go beyond range.
+                                   if((self$index + size - 1) > range){
+                                     set.seed(self$random_state)
+                                     permutation <- c(permutation, sample(range, size=(self$index + size - 1 - range), replace = TRUE))
+                                   }
+
+                                   result <- permutation[self$index:(self$index+size-1)]
+                                   self$index <- self$index + size
+                                   return(result)
                                  },
                                  integers = function(range, size = 1) {
                                    set.seed(self$random_state)
-                                   sample.int(range, size)
+                                   permutation <- sample.int(range)
+
+                                   # this part helps if the index go beyond range.
+                                   if((self$index + size - 1) > range){
+                                     set.seed(self$random_state)
+                                     permutation <- c(permutation, sample.int(range, size=(self$index + size - 1 - range), replace = TRUE))
+                                   }
+
+                                   result <- permutation[self$index:(self$index+size-1)]
+                                   self$index <- self$index + size
+                                   return(result)
                                  }
                                ))
 
@@ -280,8 +298,9 @@ getClassName = function(obj) {
   class(obj)[1]
 }
 
-train_test_split = function(data, test_size=0.3, seed=NULL){
-  set.seed(seed)
+train_test_split = function(data, test_size=0.3, random_state=NULL){
+  print(random_state)
+  set.seed(random_state)
   sample <- sample.int(n = nrow(data), size = floor(.7*nrow(data)), replace = F)
   train <- data[sample, ]
   test  <- data[-sample, ]
@@ -426,11 +445,10 @@ LESSBase <- R6::R6Class(classname = "LESSBase",
                               # Centroid is used as the center of the local sample set
                               local_center = colMeans(Xneighbors)
 
-                              local_model <- NULL
-                              #if random_state is set
-                              if(!is.null(self$local_estimator$get_attributes()$random_state)) {
-                                # FIXME
-                                # self$local_estimator$random_state <-
+                              #if random_state is one of the estimator's parameter
+                              if('random_state' %in% (self$local_estimator$public_fields())) {
+                                # set random state to an integer from rng
+                                self$local_estimator$set_random_state(self$rng$integers(32767))
                                 local_model <- self$local_estimator$fit(Xneighbors, yneighbors)$clone()
                               }else{
                                 local_model <- self$local_estimator$fit(Xneighbors, yneighbors)$clone()
@@ -459,15 +477,18 @@ LESSBase <- R6::R6Class(classname = "LESSBase",
                               Z <- scobject$fit_transform(Z)
                             }
 
-                            global_model <- NULL
                             # if(Reduce('|', is.na(self$global_estimator)))
                             if(length(self$global_estimator) != 0){ #for a null environment, the length is 0
-                              if(!is.null(self$global_estimator$get_attributes()$random_state)){
-                                # FIXME add random state
+                              #if random_state is one of the estimator's parameter
+                              if('random_state' %in% (self$global_estimator$public_fields())){
+                                self$global_estimator$set_random_state(self$rng$integers(32767))
                                 global_model <- self$global_estimator$fit(Z, y)$clone()
                               }else{
                                 global_model <- self$global_estimator$fit(Z, y)$clone()
                               }
+                            }
+                            else{
+                              global_model <- NULL
                             }
                             self$replications <- append(self$replications, Replication$new(local_estimators = local_models,
                                                                                            sc_object = scobject,
@@ -484,14 +505,15 @@ LESSBase <- R6::R6Class(classname = "LESSBase",
                           self$replications <- list()
                           for (i in 1:self$n_replications) {
                             #Split for global estimation
-                            split_list <- train_test_split(cbind(X, y), test_size =  self$val_size)
+                            split_list <- train_test_split(cbind(X, y), test_size =  self$val_size,
+                                                           random_state = self$rng$integers(32767))
                             X_train <- split_list[[1]]
                             X_val <- split_list[[2]]
                             y_train <- split_list[[3]]
                             y_val <- split_list[[4]]
 
-                            len_X_val <- nrow(X_val)
-                            len_X_train <- nrow(X_train)
+                            len_X_val <- length(y_val)
+                            len_X_train <- length(y_train)
                             # Check the validity of the input
                             if(i == 1){
                               self$check_input(len_X_train)
@@ -517,11 +539,10 @@ LESSBase <- R6::R6Class(classname = "LESSBase",
                               # Centroid is used as the center of the local sample set
                               local_center = colMeans(Xneighbors)
 
-                              local_model <- NULL
-                              #if random_state is set
-                              if(!is.null(self$local_estimator$get_attributes()$random_state)) {
-                                # FIXME
-                                # self$local_estimator$random_state <-
+                              #if random_state is one of the estimator's parameter
+                              if('random_state' %in% (self$local_estimator$public_fields())) {
+                                # set random state to an integer from rng
+                                self$local_estimator$set_random_state(self$rng$integers(32767))
                                 local_model <- self$local_estimator$fit(Xneighbors, yneighbors)$clone()
                               }else{
                                 local_model <- self$local_estimator$fit(Xneighbors, yneighbors)$clone()
@@ -550,15 +571,18 @@ LESSBase <- R6::R6Class(classname = "LESSBase",
                               Z <- scobject$fit_transform(Z)
                             }
 
-                            global_model <- NULL
                             # if(Reduce('|', is.na(self$global_estimator)))
                             if(length(self$global_estimator) != 0){ #for a null environment, the length is 0
-                              if(!is.null(self$global_estimator$get_attributes()$random_state)){
-                                # FIXME add random state
+                              #if random_state is one of the estimator's parameter
+                              if('random_state' %in% (self$global_estimator$public_fields())){
+                                self$global_estimator$set_random_state(self$rng$integers(32767))
                                 global_model <- self$global_estimator$fit(Z, y_val)$clone()
                               }else{
                                 global_model <- self$global_estimator$fit(Z, y_val)$clone()
                               }
+                            }
+                            else{
+                              global_model <- NULL
                             }
                             self$replications <- append(self$replications, Replication$new(local_estimators = local_models,
                                                                                            sc_object = scobject,
@@ -609,9 +633,11 @@ LESSBase <- R6::R6Class(classname = "LESSBase",
 
                             for (cluster_indx in 1:length(unique_labels)) {
                               neighbor_indices <- cluster_fit$labels == unique_labels[[cluster_indx]]
-                              Xneighbors <- as.matrix(X[neighbor_indices, ], byrow = TRUE)
+                              Xneighbors <- as.matrix(X[neighbor_indices, ])
                               yneighbors <- as.matrix(y[neighbor_indices])
                               if(nrow(yneighbors) == 1){
+                                # if there is only one sample in a group,
+                                # prevent Xneighbors being a (n,1) dimensional matrix
                                 Xneighbors <- t(Xneighbors)
                               }
 
@@ -622,10 +648,10 @@ LESSBase <- R6::R6Class(classname = "LESSBase",
                                 local_center <- colMeans(Xneighbors)
                               }
 
-                              #if random_state is set
-                              if(!is.null(self$local_estimator$get_attributes()$random_state)) {
-                                # FIXME
-                                # self$local_estimator$random_state <-
+                              #if random_state is one of the estimator's parameter
+                              if('random_state' %in% (self$local_estimator$public_fields())) {
+                                # set random state to an integer from rng
+                                self$local_estimator$set_random_state(self$rng$integers(32767))
                                 local_model <- self$local_estimator$fit(Xneighbors, yneighbors)$clone()
                               }else{
                                 local_model <- self$local_estimator$fit(Xneighbors, yneighbors)$clone()
@@ -655,12 +681,16 @@ LESSBase <- R6::R6Class(classname = "LESSBase",
 
                             # if(Reduce('|', is.na(self$global_estimator)))
                             if(length(self$global_estimator) != 0){ #for a null environment, the length is 0
-                              if(!is.null(self$global_estimator$get_attributes()$random_state)){
-                                # FIXME add random state
+                              #if random_state is one of the estimator's parameter
+                              if('random_state' %in% (self$global_estimator$public_fields())){
+                                self$global_estimator$set_random_state(self$rng$integers(32767))
                                 global_model <- self$global_estimator$fit(Z, y)$clone()
                               }else{
                                 global_model <- self$global_estimator$fit(Z, y)$clone()
                               }
+                            }
+                            else{
+                              global_model <- NULL
                             }
                             self$replications <- append(self$replications, Replication$new(local_estimators = local_models,
                                                                                            sc_object = scobject,
@@ -844,6 +874,7 @@ lessReg <- function() {
   data <- read.csv(file='datasets/abalone.csv', header = FALSE)
 
   # Now Selecting 70% of data as sample from total 'n' rows of the data
+  set.seed(1)
   sample <- sample.int(n = nrow(data), size = floor(.7*nrow(data)), replace = F)
   train <- data[sample, ]
   test  <- data[-sample, ]
@@ -853,13 +884,16 @@ lessReg <- function() {
   X_test <- test[,-ncol(test)]
   y_test <- test[,ncol(test)]
 
+  X <- data[, -ncol(data)]
+  y <- data[, ncol(data)]
+
   # X_train <- train[,-1]
   # y_train <- train[,1]
   # X_test <- test[,-1]
   # y_test <- test[,1]
 
   cat("Total number of training samples: ", nrow(X_train), "\n")
-  LESS <- LESSRegressor$new(cluster_method = KMeans$new(), random_state = 100)
+  LESS <- LESSRegressor$new(val_size = 0.3, random_state = 100)
   preds <- LESS$fit(X_train, y_train)$predict(X_test)
   print(LESS)
   print(head(matrix(c(y_test, preds), ncol = 2)))
