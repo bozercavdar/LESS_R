@@ -259,6 +259,13 @@ rbf <- function(data, center, coeff=0.01){
   exp(-coeff * normRows)
 }
 
+# L1 norm - Manhattan distance
+laplacian <- function(data, center, coeff=0.01){
+  dataDiff <- sweep(data, 2, center) #extract center from all rows of data
+  normRows = wordspace::rowNorms(dataDiff, method = "manhattan", p=1) #take l2 norms of each row
+  exp(-coeff * normRows)
+}
+
 # takes X and y datasets and merges them into a dataframe with column names
 prepareDataset = function(X, y) {
   merged_data <- cbind(y, X)
@@ -299,7 +306,6 @@ getClassName = function(obj) {
 }
 
 train_test_split = function(data, test_size=0.3, random_state=NULL){
-  print(random_state)
   set.seed(random_state)
   sample <- sample.int(n = nrow(data), size = floor(.7*nrow(data)), replace = F)
   train <- data[sample, ]
@@ -456,11 +462,10 @@ LESSBase <- R6::R6Class(classname = "LESSBase",
                               local_models <- append(local_models, LocalModel$new(estimator = local_model, center = local_center))
 
                               predicts[,i] <- local_model$predict(X)
-                              if(is.na(self$distance_function)) {
+                              if(is.na(c(self$distance_function))) {
                                 dists[,i] <- rbf(X, local_center, 1.0/(self$n_subsets ^ 2.0))
                               }else {
-                                # FIXME add distance function instead of rbf function
-                                dists[,i] <- rbf(X, local_center, 1.0/(self$n_subsets ^ 2.0))
+                                dists[,i] <- self$distance_function(X, local_center)
                               }
                             }
 
@@ -550,11 +555,10 @@ LESSBase <- R6::R6Class(classname = "LESSBase",
                               local_models <- append(local_models, LocalModel$new(estimator = local_model, center = local_center))
 
                               predicts[,i] <- local_model$predict(X_val)
-                              if(is.na(self$distance_function)) {
+                              if(is.na(c(self$distance_function))) {
                                 dists[,i] <- rbf(X_val, local_center, 1.0/(self$n_subsets ^ 2.0))
                               }else {
-                                # FIXME add distance function instead of rbf function
-                                dists[,i] <- rbf(X_val, local_center, 1.0/(self$n_subsets ^ 2.0))
+                                dists[,i] <- self$distance_function(X, local_center)
                               }
                             }
 
@@ -599,8 +603,8 @@ LESSBase <- R6::R6Class(classname = "LESSBase",
                           # Check the validity of the input
                           self$check_input(len_X)
 
-                          #FIXME make it same as the original code
-                          if(!is.null(self$cluster_method$get_attributes()$random_state)){
+                          # if the cluster method does not have parameter named 'random_state'
+                          if(!('random_state' %in% (self$cluster_method$public_fields()))){
                             LESSWarn$new("Clustering method is not random,
                             so there is no need for replications unless validaton set is used.
                             The number of replications is set to one.", self$warnings)
@@ -613,10 +617,13 @@ LESSBase <- R6::R6Class(classname = "LESSBase",
 
                           self$replications <- list()
                           for (i in 1:self$n_replications) {
+
                             if(self$n_replications > 1){
-                              cluster_fit <- self$cluster_method$set_random_state(self$rng$integers(32767))$fit(X)
-                              # print(length(cluster_fit$labels))
+                              cluster_fit <- self$cluster_method$
+                                set_random_state(self$rng$integers(32767))$
+                                fit(X)
                             }
+
                             unique_labels <- unique(cluster_fit$labels)
                             # Some clustering methods may find less number of clusters than requested 'n_clusters'
                             self$n_subsets <- append(self$n_subsets, length(unique_labels))
@@ -660,11 +667,10 @@ LESSBase <- R6::R6Class(classname = "LESSBase",
                               local_models <- append(local_models, LocalModel$new(estimator = local_model, center = local_center))
 
                               predicts[, cluster_indx] <- local_model$predict(X)
-                              if(is.na(self$distance_function)) {
+                              if(is.na(c(self$distance_function))) {
                                 dists[, cluster_indx] <- rbf(X, local_center, 1.0/(n_subsets ^ 2.0))
                               }else {
-                                # FIXME add distance function instead of rbf function
-                                dists[, cluster_indx] <- rbf(X, local_center, 1.0/(n_subsets ^ 2.0))
+                                dists[, cluster_indx] <- self$distance_function(X, local_center)
                               }
                             }
 
@@ -782,11 +788,12 @@ LESSRegressor <- R6::R6Class(classname = "LESSRegressor",
                                    X0 = self$scobject$fit_transform(X0)
                                  }
 
-                                 len_X0 <- NULL
-                                 if(is.matrix(X0) | is.data.frame(X0)){
+                                 if(is.matrix(X0) | is.data.frame(X0) | is.array(X0)){
                                    len_X0 <- nrow(X0)
+                                 }else if(is.vector(X0)){
+                                   len_X0 <- length(X0)
                                  }else{
-                                   print("nah")
+                                   stop("input X0 data is not one of the followings: matrix, dataframe, array, vector")
                                  }
 
                                  yhat <- matrix(0, len_X0, 1)
@@ -812,8 +819,7 @@ LESSRegressor <- R6::R6Class(classname = "LESSRegressor",
                                      if(is.na(self$distance_function)) {
                                        dists[, j] <- rbf(X0, local_center, 1.0/(n_subsets ^ 2.0))
                                      }else {
-                                       # FIXME add distance function instead of rbf function
-                                       dists[, j] <- rbf(X0, local_center, 1.0/(n_subsets ^ 2.0))
+                                       dists[, j] <- self$distance_function(X0, local_center)
                                      }
                                    }
 
@@ -850,26 +856,7 @@ LESSRegressor <- R6::R6Class(classname = "LESSRegressor",
 lessReg <- function() {
   # UNCOMMENT THIS CODE BLOCK TO PROFILE THE CODE AND SEE A PERFORMANCE ANALYSIS OF THE CODE
   # profvis::profvis({
-  #   abalone <- read.csv(file='datasets/abalone.csv', header = FALSE)
   #
-  #   # Now Selecting 70% of data as sample from total 'n' rows of the data
-  #   sample <- sample.int(n = nrow(abalone), size = floor(.7*nrow(abalone)), replace = F)
-  #   train <- abalone[sample, ]
-  #   test  <- abalone[-sample, ]
-  #
-  #   X_train <- train[,-ncol(train)]
-  #   y_train <- train[,ncol(train)]
-  #   X_test <- test[,-ncol(test)]
-  #   y_test <- test[,ncol(test)]
-  #
-  #   # xvals <- abalone[,-ncol(abalone)]
-  #   # yval <- abalone[,ncol(abalone)]
-  #   LESS <- LESSRegressor$new()
-  #   preds <- LESS$fit(X_train, y_train)$predict(X_test)
-  #
-  #   # print(head(matrix(c(y_test, preds), ncol = 2)))
-  #   mape <- MLmetrics::MAPE(preds, y_test)
-  #   print(mape)
   # })
 
   data <- read.csv(file='datasets/abalone.csv', header = FALSE)
@@ -894,13 +881,12 @@ lessReg <- function() {
   # y_test <- test[,1]
 
   cat("Total number of training samples: ", nrow(X_train), "\n")
-  LESS <- LESSRegressor$new(val_size = 0.3, random_state = 100)
+  LESS <- LESSRegressor$new(random_state = 100)
   preds <- LESS$fit(X_train, y_train)$predict(X_test)
   print(LESS)
   print(head(matrix(c(y_test, preds), ncol = 2)))
   mape <- MLmetrics::MAPE(preds, y_test)
   print(mape)
-
 
   #UNCOMMENT THIS CODE BLOCK TO SEE ERROR COMPARISON BETWEEN DIFFERENT ESTIMATORS
   # models <- list(LESSRegressor$new(),
