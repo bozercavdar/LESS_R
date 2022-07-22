@@ -27,6 +27,7 @@ BaseEstimator <- R6::R6Class(classname = "BaseEstimator",
 SklearnEstimator <- R6::R6Class(classname = "SklearnEstimator",
                                 inherit = BaseEstimator,
                                 public = list(
+                                  type = "estimator",
                                   fit = function() {
                                     #maybe check for
                                     print("dummy fit function")
@@ -150,7 +151,7 @@ StandardScaler <- R6::R6Class(classname = "StandardScaler",
                                   # using z = (x - u) / s formula
                                   merged <- apply(merged, 2, function(x) (x - x[1]) / x[2] )
                                   #return the standardized version of original X matrix, extract the mean and stdev rows (first 2 cols)
-                                  return(merged[3:nrow(merged),])
+                                  return(as.matrix(merged[3:nrow(merged),]))
                                 },
                                 fit_transform = function(X) {
                                   self$fit(X)$transform(X)
@@ -218,7 +219,8 @@ KDTree <- R6::R6Class(classname = "KDTree",
                         },
                         query = function(query_X, k=1){
                           # query the tree for the k nearest neighbors
-                          RANN::nn2(data = self$X, query = query_X, k = k)
+                          query <- as.matrix(query_X)
+                          RANN::nn2(data = self$X, query = query, k = k)
                         }
                       ))
 
@@ -302,12 +304,20 @@ prepareXset = function(X) {
 
 # checks if the input estimator's type is regressor
 is_regressor = function(estimator) {
-  estimator$estimator_type == "regressor"
+  if(is.null(estimator)){
+    return(FALSE)
+  }else{
+    return(estimator$estimator_type == "regressor")
+  }
 }
 
 # checks if the input estimator's type is classifier
 is_classifier = function(estimator) {
-  estimator$estimator_type == "classifier"
+  if(is.null(estimator)){
+    return(FALSE)
+  }else{
+    return(estimator$estimator_type == "classifier")
+  }
 }
 
 # returns the class name of the input object
@@ -315,6 +325,7 @@ getClassName = function(obj) {
   class(obj)[1]
 }
 
+# splits the input data into train and test sets
 train_test_split = function(data, test_size=0.3, random_state=NULL){
   set.seed(random_state)
   sample <- sample.int(n = nrow(data), size = floor(.7*nrow(data)), replace = F)
@@ -327,6 +338,99 @@ train_test_split = function(data, test_size=0.3, random_state=NULL){
   y_test <- test[,ncol(test)]
   return(list(X_train, X_test, y_train, y_test))
 }
+
+# checks if the given estimator is fitted
+check_is_fitted = function(estimator){
+  if(is.null(estimator$type)){
+    stop("\tGiven estimator is not an estimator instance.")
+  }else if(estimator$type != "estimator"){
+    stop("\tGiven estimator is not an estimator instance.")
+  }
+
+  if(is.null(estimator$isFitted)){
+    is_fitted <- FALSE
+  }else{
+    is_fitted <- estimator$isFitted
+  }
+
+  if(!is_fitted){
+    stop("\tThis estimator instance is not fitted yet.\n\tCall 'fit' with appropriate arguments before using this estimator.")
+  }
+}
+
+# Input validation on a matrix.
+# The input is checked to be a non-empty 2D matrix or dataframe containing only finite values.
+check_matrix = function(matrix){
+  is.scalar <- function(x) is.atomic(x) && length(x) == 1L
+  matrix_name <- deparse(substitute(matrix))
+  if(is.scalar(matrix)){
+    stop(sprintf("\tThe input '%s' is expected to be a 2D matrix or dataframe, got a scalar instead.
+                 \tYour data must be (n,1) dimensional if your data has a single feature or
+                 \t(1, n) dimensional  if it contains a single sample.", matrix_name))
+  }else if(is.null(dim(matrix))){
+    stop(sprintf("\tThe input '%s' is expected to be a 2D matrix or dataframe, got a 1D vector instead.
+                 \tYour data must be (n,1) dimensional if your data has a single feature or
+                 \t(1, n) matrix if it contains a single sample.", matrix_name))
+  }else if(!is.matrix(matrix) & !is.data.frame(matrix)){
+    stop(sprintf("\tThe input '%s' is expected to be a 2D matrix or dataframe, got a %s", matrix_name, class(matrix)))
+  }
+
+  if(!is.numeric(as.matrix(matrix))){
+    stop(sprintf("\tThe input '%s' is expected to be a numeric", matrix_name))
+  }
+
+  matrix <- as.matrix(matrix) #if the input is a data frame, it gives an error in is.infinite
+  infIndices <- is.infinite(matrix)
+  nanIndices <- is.nan(matrix)
+  is_infite <- Reduce('|', infIndices)
+  is_nan <- Reduce('|', nanIndices)
+  if(is_infite | is_nan){
+    stop("\t Values in X cannot be infinite or NaN")
+  }
+}
+
+# Isolated part of check_X_y dedicated to y validation
+check_y = function(y) {
+  is.scalar <- function(x) is.atomic(x) && length(x) == 1L
+  y_name <- deparse(substitute(y))
+  if(is.scalar(matrix)){
+    stop(sprintf("\tThe input '%s' is expected to be a 1D vector or (n,1) dimensional matrix/dataframe, got a scalar instead.", y_name))
+  }else if(!is.matrix(y) & !is.data.frame(y) & !is.vector(y)){
+    stop(sprintf("\tThe input '%s' is expected to be a 1D vector or (n,1) dimensional matrix/dataframe, got a %s", y_name, class(y)))
+  }else if(!is.vector(y)){
+    if(ncol(y)>1){
+      stop(sprintf("\tThe input '%s' is expected to be a 1D vector or (n,1) dimensional matrix/dataframe, got a (n,m) dimensional matrix/dataframe", y_name))
+    }
+  }
+
+  if(!is.numeric(as.matrix(y))){
+    stop(sprintf("\tThe input '%s' is expected to be a numeric", y_name))
+  }
+
+  y <- as.matrix(y) #if the input is a data frame, it gives an error in is.infinite
+  infIndices <- is.infinite(y)
+  nanIndices <- is.nan(y)
+  is_infite <- Reduce('|', infIndices)
+  is_nan <- Reduce('|', nanIndices)
+  if(is_infite | is_nan){
+    stop("\t Values in y cannot be infinite or NaN")
+  }
+  return(as.matrix(y))
+}
+
+# Checks X and y for consistent length, enforces X to be 2D and y 1D.
+# X is checked to be non-empty and containing only finite values.
+# Standard input checks are also applied to y, such as checking that y
+# does not have nan or inf targets.
+check_X_y = function(X, y){
+  check_matrix(X)
+  y <- check_y(y)
+  if(nrow(X) != nrow(y)){
+    stop(sprintf("Found input variables with inconsistent numbers of samples:\n\tX: %s\n\ty: %s", nrow(X), nrow(y)))
+  }
+}
+
+
 ###################
 
 LESSBase <- R6::R6Class(classname = "LESSBase",
@@ -785,7 +889,9 @@ LESSRegressor <- R6::R6Class(classname = "LESSRegressor",
                                  self$tree_method = tree_method
                                },
                                fit = function(X, y){
-                                 # FIXME check_X_y()
+
+                                 # Check that X and y have correct shape
+                                 check_X_y(X, y)
                                  self$set_local_attributes()
 
                                  if(self$scaling){
@@ -815,11 +921,10 @@ LESSRegressor <- R6::R6Class(classname = "LESSRegressor",
                                  invisible(self)
                                },
                                predict = function(X0) {
-                                 # FIXME input check/validation
 
-                                 # check_is_fitted(self, attributes='_isfitted')
-                                 # # Input validation
-                                 # X0 = check_array(X0)
+                                 check_is_fitted(self)
+                                 # Input validation
+                                 check_matrix(X0)
 
                                  if(self$scaling){
                                    X0 = self$scobject$fit_transform(X0)
@@ -835,6 +940,7 @@ LESSRegressor <- R6::R6Class(classname = "LESSRegressor",
 
                                  yhat <- matrix(0, len_X0, 1)
                                  for (i in 1:self$n_replications) {
+                                   # Get the fitted global and local estimators
                                    global_model <- self$replications[[i]]$global_estimator
                                    local_models <- self$replications[[i]]$local_estimators
 
@@ -848,7 +954,6 @@ LESSRegressor <- R6::R6Class(classname = "LESSRegressor",
                                    dists <- matrix(0, len_X0, n_subsets)
                                    predicts <- matrix(0, len_X0, n_subsets)
                                    for(j in 1:n_subsets){
-                                     # Get the fitted global and local estimators
                                      local_center <- local_models[[j]]$center
                                      local_model <- local_models[[j]]$estimator
                                      predicts[,j] <- local_model$predict(X0)
@@ -875,7 +980,7 @@ LESSRegressor <- R6::R6Class(classname = "LESSRegressor",
                                    if(length(global_model) != 0){
                                      yhat <- yhat + global_model$predict(Z0)
                                    }else{
-                                     yhat <- yhat + rowSums(as.matrix(Z0))
+                                     yhat <- yhat + rowSums(Z0)
                                    }
                                  }
 
@@ -909,13 +1014,13 @@ lessReg <- function() {
   X_test <- test[,-ncol(test)]
   y_test <- test[,ncol(test)]
 
+  # X_train <- as.matrix(train[,1])
+  # y_train <- train[,ncol(train)]
+  # X_test <- as.matrix(test[,1])
+  # y_test <- test[,ncol(test)]
+
   X <- data[, -ncol(data)]
   y <- data[, ncol(data)]
-
-  # X_train <- train[,-1]
-  # y_train <- train[,1]
-  # X_test <- test[,-1]
-  # y_test <- test[,1]
 
   cat("Total number of training samples: ", nrow(X_train), "\n")
   LESS <- LESSRegressor$new(random_state = 100)
