@@ -78,7 +78,7 @@ LinearRegression <- R6::R6Class(classname = "LinearRegression",
                                   },
                                   predict = function(X) {
                                     data <- prepareXset(X)
-                                    predict(self$model, newdata = data)
+                                    suppressWarnings(predict(self$model, newdata = data))
                                   },
                                   printModel = function() {
                                     summary(self$model)
@@ -94,11 +94,11 @@ LinearRegression <- R6::R6Class(classname = "LinearRegression",
 #                                        model = NULL,
 #                                        fit = function(X, y) {
 #                                          df <- prepareDataset(X, y)
-#                                          self$model <- rpart::rpart(y ~ ., method = "anova", data = df, control = rpart::rpart.control(minsplit = 2, minbucket = 1))
+#                                          self$model <- rpart::rpart(y ~ ., method = "anova", data = df, control = rpart::rpart.control(minsplit = 2, minbucket = 1, cp = 0.002))
 #                                          rpart.plot::rpart.plot(self$model)
+#                                          # summary(self$model)
 #                                          invisible(self)
 #                                          # print("model: ")
-#                                          # summary(model)
 #
 #                                        },
 #                                        predict = function(X) {
@@ -129,6 +129,7 @@ DecisionTreeRegressor <- R6::R6Class(classname = "DecisionTreeRegressor",
                                        }
                                      )
                                      )
+
 StandardScaler <- R6::R6Class(classname = "StandardScaler",
                               public = list(
                                 mean = NULL,
@@ -273,7 +274,7 @@ prepareDataset = function(X, y) {
   merged_data <- cbind(y, X)
   df <- as.data.frame(merged_data)
   colX <- list()
-  if(is.matrix(merged_data[,-1])){
+  if(!is.vector(merged_data[,-1])){
     ncolumns <- ncol(merged_data[,-1])
   }else{
     ncolumns <- 1
@@ -290,7 +291,7 @@ prepareDataset = function(X, y) {
 prepareXset = function(X) {
   df <- as.data.frame(X)
   colX <- list()
-  if(is.matrix(X)){
+  if(!is.vector(X)){
     ncolumns <- ncol(X)
   }else{
     ncolumns <- 1
@@ -842,10 +843,165 @@ LESSBase <- R6::R6Class(classname = "LESSBase",
                           invisible(self)
                         },
 
+                        fitvalc = function(X, y){
+                          # Fit function: (val_size x data) is used for the global estimator (validation)
+                          # Clustering is used (no tree method)
+
+                          self$replications <- list()
+                          for (i in 1:self$n_replications){
+                            # Split for global estimation
+                            split_list <- train_test_split(cbind(X, y), test_size =  self$val_size,
+                                                           random_state = self$rng$integers(32767))
+                            X_train <- split_list[[1]]
+                            X_val <- split_list[[2]]
+                            y_train <- split_list[[3]]
+                            y_val <- split_list[[4]]
+
+                            len_X_val <- length(y_val)
+                            len_X_train <- length(y_train)
+                            # Check the validity of the input
+                            if(i == 1){
+                              self$check_input(len_X_train)
+                            }
+
+                            if('random_state' %in% (self$cluster_method$public_fields())){
+                              cluster_fit <- self$cluster_method$
+                                set_random_state(self$rng$integers(32767))$
+                                fit(X_train)
+                            }else{
+                              cluster_fit <- self$cluster_method$fit(X_train)
+                            }
+
+                            if(i == 1){
+                              if(!is.null(cluster_fit$cluster_centers)){
+                                use_cluster_centers = TRUE
+                              }else{
+                                use_cluster_centers = FALSE
+                              }
+                            }
+
+                            unique_labels <- unique(cluster_fit$labels)
+                            # Some clustering methods may find less number of clusters than requested 'n_clusters'
+                            self$n_subsets <- append(self$n_subsets, length(unique_labels))
+                            n_subsets <- self$n_subsets[[i]]
+
+                            local_models <- list()
+                            dists <- matrix(0, len_X_val, n_subsets)
+                            predicts <- matrix(0, len_X_val, n_subsets)
+
+                            for (cluster_indx in 1:length(unique_labels)){
+                              neighbor_indices <- cluster_fit$labels == unique_labels[[cluster_indx]]
+                              Xneighbors <- as.matrix(X_train[neighbor_indices, ])
+                              yneighbors <- as.matrix(y_train[neighbor_indices])
+                              if(nrow(yneighbors) == 1){
+                                # if there is only one sample in a group,
+                                # prevent Xneighbors being a (n,1) dimensional matrix
+                                Xneighbors <- t(Xneighbors)
+                              }
+
+                              # Centroid is used as the center of the local sample set
+                              if(use_cluster_centers){
+                                local_center <- cluster_fit$cluster_centers[cluster_indx, ]
+                              }else{
+                                local_center <- colMeans(Xneighbors)
+                              }
+
+                              #if random_state is one of the estimator's parameter
+                              if('random_state' %in% (self$local_estimator$public_fields())) {
+                                # set random state to an integer from rng
+                                self$local_estimator$set_random_state(self$rng$integers(32767))
+                                local_model <- self$local_estimator$fit(Xneighbors, yneighbors)$clone()
+                              }else{
+                                local_model <- self$local_estimator$fit(Xneighbors, yneighbors)$clone()
+                              }
+                              local_models <- append(local_models, LocalModel$new(estimator = local_model, center = local_center))
+
+                              predicts[, cluster_indx] <- local_model$predict(X_val)
+                              if(is.null(c(self$distance_function))) {
+                                dists[, cluster_indx] <- rbf(X_val, local_center, 1.0/(n_subsets ^ 2.0))
+                              }else {
+                                dists[, cluster_indx] <- self$distance_function(X_val, local_center)
+                              }
+                            }
+
+                            # Normalize the distances from samples to the local subsets
+                            if(self$d_normalize) {
+                              denom <- rowSums(dists)
+                              denom[denom < 1e-08] <- 1e-08
+                              dists <- t(t(dists)/denom)
+                            }
+
+                            Z <- dists * predicts
+                            scobject <- StandardScaler$new()
+                            if(self$scaling){
+                              Z <- scobject$fit_transform(Z)
+                            }
+
+                            # if(Reduce('|', is.null(self$global_estimator)))
+                            if(length(self$global_estimator) != 0){ #for a null environment, the length is 0
+                              #if random_state is one of the estimator's parameter
+                              if('random_state' %in% (self$global_estimator$public_fields())){
+                                self$global_estimator$set_random_state(self$rng$integers(32767))
+                                global_model <- self$global_estimator$fit(Z, y_val)$clone()
+                              }else{
+                                global_model <- self$global_estimator$fit(Z, y_val)$clone()
+                              }
+                            }
+                            else{
+                              global_model <- NULL
+                            }
+                            self$replications <- append(self$replications, Replication$new(local_estimators = local_models,
+                                                                                           sc_object = scobject,
+                                                                                           global_estimator = global_model))
+                          }
+
+                          invisible(self)
+                        },
+
                         print = function() {
                           n_subsets <- unlist(self$n_subsets)
                           cat("Number of subsets: ", n_subsets, "\n")
                           cat("Number of samples in each subset: ", self$n_neighbors, "\n")
+                        },
+
+                        get_n_subsets = function(){
+                          # Auxiliary function returning the number of subsets
+                          return(self$n_subsets)
+                        },
+
+                        get_n_neighbors = function(){
+                          # Auxiliary function returning the number of neighbors
+                          return(self$n_subsets)
+                        },
+
+                        get_frac = function(){
+                          # Auxiliary function returning the percentage of samples used to set the number of neighbors
+                          return(self$frac)
+                        },
+
+                        get_n_replications = function(){
+                          # Auxiliary function returning the number of replications
+                          return(self$n_replications)
+                        },
+
+                        get_d_normalize = function(){
+                          # Auxiliary function returning the flag for normalization
+                          return(self$d_normalize)
+                        },
+
+                        get_scaling = function(){
+                          # Auxiliary function returning the flag for scaling
+                          return(self$scaling)
+                        },
+
+                        get_val_size = function(){
+                          # Auxiliary function returning the validation set size
+                          return(self$val_size)
+                        },
+
+                        get_random_state = function(){
+                          # Auxiliary function returning the random seed
+                          return(self$random_state)
                         }
                       )
                     )
@@ -1022,15 +1178,21 @@ lessReg <- function() {
   X <- data[, -ncol(data)]
   y <- data[, ncol(data)]
 
+  # dt <- LinearRegression$new()
+  # preds <- dt$fit(X_train, y_train)$predict(X_test)
+  # print(head(matrix(c(y_test, preds), ncol = 2)))
+  # mape <- MLmetrics::MAPE(preds, y_test)
+  # cat("MAPE: ", mape, "\n")
+
   cat("Total number of training samples: ", nrow(X_train), "\n")
-  LESS <- LESSRegressor$new(random_state = 100)
+  LESS <- LESSRegressor$new(cluster_method = KMeans$new(), val_size = 0.3)
   preds <- LESS$fit(X_train, y_train)$predict(X_test)
   print(LESS)
   print(head(matrix(c(y_test, preds), ncol = 2)))
   mape <- MLmetrics::MAPE(preds, y_test)
-  print(mape)
+  cat("MAPE: ", mape, "\n")
 
-  #UNCOMMENT THIS CODE BLOCK TO SEE ERROR COMPARISON BETWEEN DIFFERENT ESTIMATORS
+  # UNCOMMENT THIS CODE BLOCK TO SEE ERROR COMPARISON BETWEEN DIFFERENT ESTIMATORS
   # models <- list(LESSRegressor$new(),
   #                LinearRegression$new(),
   #                DecisionTreeRegressor$new())
