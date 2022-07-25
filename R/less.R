@@ -254,8 +254,8 @@ KMeans <- R6::R6Class(classname = "KMeans",
 # HELPER FUNCTIONS
 ####################
 
-#' RBF kernel - L2 norm
-#' This is is used as the default distance function in LESS
+# RBF kernel - L2 norm
+# This is is used as the default distance function in LESS
 rbf <- function(data, center, coeff=0.01){
   dataDiff <- sweep(data, 2, center) #extract center from all rows of data
   normRows = wordspace::rowNorms(dataDiff, method = "euclidean", p=2) #take l2 norms of each row
