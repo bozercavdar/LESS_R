@@ -2,40 +2,61 @@
 # HELPER CLASSES
 ####################
 BaseEstimator <- R6::R6Class(classname = "BaseEstimator",
-                             public = list(
+                             private = list(
+                               priv_fields = function(){
+                                 classList <- class(self)[-length(class(self))]
+                                 classNum <- length(classList)
+                                 fieldList <- list()
+                                 for (i in 1:classNum) {
+                                   priv_fields <- get(class(self)[i])$private_fields
+                                   fieldList <- append(fieldList, priv_fields)
+                                 }
+                                 return(names(fieldList))
+                               },
                                public_fields = function(){
                                  classList <- class(self)[-length(class(self))]
                                  classNum <- length(classList)
                                  fieldList <- list()
                                  for (i in 1:classNum) {
-                                   fields <- get(class(self)[i])$public_fields
-                                   fieldList <- append(fieldList, fields)
+                                   public_fields <- get(class(self)[i])$public_fields
+                                   fieldList <- append(fieldList, public_fields)
                                  }
                                  return(names(fieldList))
+                               }
+                             ),
+                             public = list(
+                               get_all_fields = function(){
+                                 return(append(private$priv_fields(), private$public_fields()))
                                },
                                get_attributes = function(){
-                                 values <- purrr::map(self$public_fields(), ~.subset2(self, .x))
-                                 names(values) <- self$public_fields()
-                                 return(values)
+                                 priv_values <- purrr::map(private$priv_fields(), ~.subset2(private, .x))
+                                 public_values <- purrr::map(private$public_fields(), ~.subset2(self, .x))
+                                 names(priv_values) <- private$priv_fields()
+                                 names(public_values) <- private$public_fields()
+                                 return(append(priv_values, public_values))
                                },
                                set_random_state = function(random_state){
-                                 self$random_state = random_state
+                                 private$random_state = random_state
                                  invisible(self)
                                }
                              ))
 
 SklearnEstimator <- R6::R6Class(classname = "SklearnEstimator",
                                 inherit = BaseEstimator,
+                                private = list(
+                                  type = "estimator"
+                                ),
                                 public = list(
-                                  type = "estimator",
                                   fit = function() {
-                                    #maybe check for
                                     print("dummy fit function")
                                     invisible(self)
                                   },
                                   predict = function(){
                                     print("dummy predict function")
                                     invisible(self)
+                                  },
+                                  get_type = function(){
+                                    return(private$type)
                                   }
                                 )
                                 )
@@ -56,20 +77,22 @@ Replication <- R6::R6Class(classname = "Replication",
                          global_estimator = NULL,
                          local_estimators = NULL,
                          initialize = function(sc_object = NULL, global_estimator = NULL, local_estimators = NULL) {
-                           self$sc_object <- sc_object #"StandardScaler"
-                           self$global_estimator <- global_estimator #"SklearnEstimator"
-                           self$local_estimators <- local_estimators #List[LocalModel]
+                           self$sc_object <- sc_object
+                           self$global_estimator <- global_estimator
+                           self$local_estimators <- local_estimators
                          }
                        ))
 
 LinearRegression <- R6::R6Class(classname = "LinearRegression",
                                 inherit = SklearnEstimator,
-                                public = list(
+                                private = list(
                                   estimator_type = "regressor",
-                                  model = NULL,
+                                  model = NULL
+                                ),
+                                public = list(
                                   fit = function(X, y) {
                                     df <- prepareDataset(X, y)
-                                    self$model <- lm(y ~ ., data = df)
+                                    private$model <- lm(y ~ ., data = df)
                                     # if(length(self$model$coefficients) > self$model$rank){
                                     #   print("rank deficient fit. number of parameters are more than the observations")
                                     #   print(self$model$rank)
@@ -78,10 +101,13 @@ LinearRegression <- R6::R6Class(classname = "LinearRegression",
                                   },
                                   predict = function(X) {
                                     data <- prepareXset(X)
-                                    suppressWarnings(predict(self$model, newdata = data))
+                                    suppressWarnings(predict(private$model, newdata = data))
                                   },
                                   printModel = function() {
-                                    summary(self$model)
+                                    summary(private$model)
+                                  },
+                                  get_estimator_type = function() {
+                                    return(private$estimator_type)
                                   }
                                 )
                                 )
@@ -89,13 +115,15 @@ LinearRegression <- R6::R6Class(classname = "LinearRegression",
 # Decision Tree wrapper class with using rpart package
 # DecisionTreeRegressor <- R6::R6Class(classname = "DecisionTreeRegressor",
 #                                      inherit = SklearnEstimator,
-#                                      public = list(
+#                                      private = list(
 #                                        estimator_type = "regressor",
-#                                        model = NULL,
+#                                        model = NULL
+#                                      ),
+#                                      public = list(
 #                                        fit = function(X, y) {
 #                                          df <- prepareDataset(X, y)
-#                                          self$model <- rpart::rpart(y ~ ., method = "anova", data = df, control = rpart::rpart.control(minsplit = 2, minbucket = 1, cp = 0.002))
-#                                          rpart.plot::rpart.plot(self$model)
+#                                          private$model <- rpart::rpart(y ~ ., method = "anova", data = df, control = rpart::rpart.control(minsplit = 2, minbucket = 1, cp = 0.002))
+#                                          rpart.plot::rpart.plot(private$model)
 #                                          # summary(self$model)
 #                                          invisible(self)
 #                                          # print("model: ")
@@ -103,7 +131,10 @@ LinearRegression <- R6::R6Class(classname = "LinearRegression",
 #                                        },
 #                                        predict = function(X) {
 #                                          data <- prepareXset(X)
-#                                          predict(self$model, data, method = "anova")
+#                                          predict(private$model, data, method = "anova")
+#                                        },
+#                                        get_estimator_type = function() {
+#                                          return(private$estimator_type)
 #                                        }
 #                                      )
 #                                      )
@@ -111,29 +142,36 @@ LinearRegression <- R6::R6Class(classname = "LinearRegression",
 # Decision Tree wrapper class with using party package
 DecisionTreeRegressor <- R6::R6Class(classname = "DecisionTreeRegressor",
                                      inherit = SklearnEstimator,
-                                     public = list(
+                                     private = list(
                                        estimator_type = "regressor",
-                                       model = NULL,
+                                       model = NULL
+                                     ),
+                                     public = list(
                                        fit = function(X, y) {
                                          df <- prepareDataset(X, y)
-                                         self$model <- party::ctree(
+                                         private$model <- party::ctree(
                                            y ~ .,
                                            data = df,
                                            controls = party::ctree_control(minsplit = 2, minbucket = 1))
-                                         # plot(self$model)
+                                         # plot(private$model)
                                          invisible(self)
                                        },
                                        predict = function(X) {
                                          data <- prepareXset(X)
-                                         predict(self$model, data)
+                                         predict(private$model, data)
+                                       },
+                                       get_estimator_type = function() {
+                                         return(private$estimator_type)
                                        }
                                      )
                                      )
 
 StandardScaler <- R6::R6Class(classname = "StandardScaler",
-                              public = list(
+                              private = list(
                                 mean = NULL,
                                 stdev = NULL,
+                              ),
+                              public = list(
                                 fit = function(X) {
                                   # standart deviation function for internal use
                                   # the default stdev() function of R, divides by length(ln)-1
@@ -141,13 +179,13 @@ StandardScaler <- R6::R6Class(classname = "StandardScaler",
                                     sqrt(sum((ln - mean(ln)) ^ 2 / length(ln)))
                                   }
                                   # assign mean and standart deviation parameters
-                                  self$stdev <- apply(X, 2, standart_dev)
-                                  self$mean <- colMeans(X)
+                                  private$stdev <- apply(X, 2, standart_dev)
+                                  private$mean <- colMeans(X)
                                   invisible(self)
                                 },
                                 transform = function(X) {
                                   # append mean and standart deviation values to the X matrix
-                                  merged <- rbind(self$mean, self$stdev, X)
+                                  merged <- rbind(private$mean, private$stdev, X)
                                   # standardize each value by the corresponding mean and stdev values
                                   # using z = (x - u) / s formula
                                   merged <- apply(merged, 2, function(x) (x - x[1]) / x[2] )
@@ -158,48 +196,53 @@ StandardScaler <- R6::R6Class(classname = "StandardScaler",
                                   self$fit(X)$transform(X)
                                 },
                                 print = function() {
-                                  cat("Mean: ", self$mean, "\n")
-                                  cat("Standart Deviation: ", self$stdev, "\n")
+                                  cat("Mean: ", private$mean, "\n")
+                                  cat("Standart Deviation: ", private$stdev, "\n")
                                 }
                               ))
 
 RandomGenerator <- R6::R6Class(classname = "RandomGenerator",
-                               public = list(
+                               private = list(
                                  random_state = NULL,
                                  index = NULL,
+                               ),
+                               public = list(
                                  initialize = function(random_state){
-                                   self$random_state = random_state
-                                   self$index = 1
+                                   private$random_state = random_state
+                                   private$index = 1
                                  },
                                  choice = function(range, size){
                                    # range: sampling takes place from 1:range
                                    # size: a non-negative integer giving the number of items to choose
-                                   set.seed(self$random_state)
+                                   set.seed(private$random_state)
                                    permutation <- sample(range)
 
                                    # this part helps if the index go beyond range.
-                                   if((self$index + size - 1) > range){
-                                     set.seed(self$random_state)
-                                     permutation <- c(permutation, sample(range, size=(self$index + size - 1 - range), replace = TRUE))
+                                   if((private$index + size - 1) > range){
+                                     set.seed(private$random_state)
+                                     permutation <- c(permutation, sample(range, size=(private$index + size - 1 - range), replace = TRUE))
                                    }
 
-                                   result <- permutation[self$index:(self$index+size-1)]
-                                   self$index <- self$index + size
+                                   result <- permutation[private$index:(private$index+size-1)]
+                                   private$index <- private$index + size
                                    return(result)
                                  },
                                  integers = function(range, size = 1) {
-                                   set.seed(self$random_state)
+                                   set.seed(private$random_state)
                                    permutation <- sample.int(range)
 
                                    # this part helps if the index go beyond range.
-                                   if((self$index + size - 1) > range){
-                                     set.seed(self$random_state)
-                                     permutation <- c(permutation, sample.int(range, size=(self$index + size - 1 - range), replace = TRUE))
+                                   if((private$index + size - 1) > range){
+                                     set.seed(private$random_state)
+                                     permutation <- c(permutation, sample.int(range, size=(private$index + size - 1 - range), replace = TRUE))
                                    }
 
-                                   result <- permutation[self$index:(self$index+size-1)]
-                                   self$index <- self$index + size
+                                   result <- permutation[private$index:(private$index+size-1)]
+                                   private$index <- private$index + size
                                    return(result)
+                                 },
+                                 get_random_state = function(){
+                                   return(private$random_state)
                                  }
                                ))
 
@@ -213,21 +256,23 @@ LESSWarn <- R6::R6Class(classname = "LESSWarn",
                         ))
 
 KDTree <- R6::R6Class(classname = "KDTree",
-                      public = list(
+                      private = list(
                         X = NULL,
+                      ),
+                      public = list(
                         initialize = function(X = NULL) {
-                          self$X = X
+                          private$X = X
                         },
                         query = function(query_X, k=1){
                           # query the tree for the k nearest neighbors
                           query <- as.matrix(query_X)
-                          RANN::nn2(data = self$X, query = query, k = k)
+                          RANN::nn2(data = private$X, query = query, k = k)
                         }
                       ))
 
 KMeans <- R6::R6Class(classname = "KMeans",
                       inherit = BaseEstimator,
-                      public = list(
+                      private = list(
                         model = NULL,
                         n_clusters = NULL,
                         n_init = NULL,
@@ -235,18 +280,26 @@ KMeans <- R6::R6Class(classname = "KMeans",
                         cluster_centers = NULL,
                         labels = NULL,
                         random_state = NULL,
+                      ),
+                      public = list(
                         initialize = function(n_clusters = 8, n_init = 10, max_iter = 300, random_state = NULL){
-                          self$n_clusters = n_clusters
-                          self$n_init = n_init
-                          self$max_iter = max_iter
-                          self$random_state = random_state
+                          private$n_clusters = n_clusters
+                          private$n_init = n_init
+                          private$max_iter = max_iter
+                          private$random_state = random_state
                         },
                         fit = function(X){
-                          set.seed(self$random_state)
-                          self$model <- kmeans(X, centers = self$n_clusters, iter.max = self$max_iter, nstart = self$n_init)
-                          self$cluster_centers <- self$model$centers
-                          self$labels <- self$model$cluster
+                          set.seed(private$random_state)
+                          private$model <- kmeans(X, centers = private$n_clusters, iter.max = private$max_iter, nstart = private$n_init)
+                          private$cluster_centers <- private$model$centers
+                          private$labels <- private$model$cluster
                           invisible(self)
+                        },
+                        get_cluster_centers = function(){
+                          return(private$cluster_centers)
+                        },
+                        get_labels = function(){
+                          return(private$labels)
                         }
                       ))
 
@@ -308,7 +361,7 @@ is_regressor = function(estimator) {
   if(is.null(estimator)){
     return(FALSE)
   }else{
-    return(estimator$estimator_type == "regressor")
+    return(estimator$get_estimator_type() == "regressor")
   }
 }
 
@@ -317,7 +370,7 @@ is_classifier = function(estimator) {
   if(is.null(estimator)){
     return(FALSE)
   }else{
-    return(estimator$estimator_type == "classifier")
+    return(estimator$get_estimator_type() == "classifier")
   }
 }
 
@@ -342,9 +395,9 @@ train_test_split = function(data, test_size=0.3, random_state=NULL){
 
 # checks if the given estimator is fitted
 check_is_fitted = function(estimator){
-  if(is.null(estimator$type)){
+  if(is.null(estimator$get_type())){
     stop("\tGiven estimator is not an estimator instance.")
-  }else if(estimator$type != "estimator"){
+  }else if(estimator$get_type() != "estimator"){
     stop("\tGiven estimator is not an estimator instance.")
   }
 
