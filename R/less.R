@@ -565,8 +565,8 @@ LESSBase <- R6::R6Class(classname = "LESSBase",
                         },
 
                         fitnoval = function(X, y) {
-                          #' Fit function: All data is used with the global estimator (no validation)
-                          #' Tree method is used (no clustering)
+                          # Fit function: All data is used with the global estimator (no validation)
+                          # Tree method is used (no clustering)
                           len_X <- length(y)
                           self$check_input(len_X)
                           tree <- self$tree_method(X)
@@ -1006,7 +1006,9 @@ LESSBase <- R6::R6Class(classname = "LESSBase",
                       )
                     )
 
-
+#' LESSRegressor
+#'
+#' @export
 LESSRegressor <- R6::R6Class(classname = "LESSRegressor",
                              inherit = LESSBase,
                              public = list(
@@ -1145,6 +1147,8 @@ LESSRegressor <- R6::R6Class(classname = "LESSRegressor",
                                }
                              ))
 
+###########################
+
 
 #' Apply LESS regression
 #'
@@ -1174,9 +1178,6 @@ lessReg <- function() {
   # y_train <- train[,ncol(train)]
   # X_test <- as.matrix(test[,1])
   # y_test <- test[,ncol(test)]
-
-  X <- data[, -ncol(data)]
-  y <- data[, ncol(data)]
 
   # dt <- LinearRegression$new()
   # preds <- dt$fit(X_train, y_train)$predict(X_test)
