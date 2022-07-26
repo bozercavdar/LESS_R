@@ -1,8 +1,0 @@
-build-last-errors="[]"
-build-last-errors-base-dir="~/R Packages/lessTest/"
-build-last-outputs="[{\"type\":0,\"output\":\"==> Rcmd.exe INSTALL --preclean --no-multiarch --with-keep.source lessTest\\n\\n\"},{\"type\":1,\"output\":\"* installing to library 'C:/Users/ozerc/AppData/Local/R/win-library/4.2'\\r\\n\"},{\"type\":2,\"output\":\"ERROR: dependency 'lm' is not available for package 'lessTest'\\r\\n\"},{\"type\":1,\"output\":\"* removing 'C:/Users/ozerc/AppData/Local/R/win-library/4.2/lessTest'\\r\\n\"},{\"type\":1,\"output\":\"\"},{\"type\":2,\"output\":\"\\nExited with status 1.\\n\\n\"}]"
-compile_pdf_state="{\"tab_visible\":false,\"running\":false,\"target_file\":\"\",\"output\":\"\",\"errors\":[]}"
-files.monitored-path=""
-find-in-files-state="{\"handle\":\"\",\"input\":\"\",\"path\":\"\",\"regex\":false,\"ignoreCase\":false,\"results\":{\"file\":[],\"line\":[],\"lineValue\":[],\"matchOn\":[],\"matchOff\":[],\"replaceMatchOn\":[],\"replaceMatchOff\":[]},\"running\":false,\"replace\":false,\"preview\":false,\"gitFlag\":false,\"replacePattern\":\"\"}"
-imageDirtyState="1"
-saveActionState="0"
