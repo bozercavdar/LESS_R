@@ -256,6 +256,7 @@ LESSWarn <- R6::R6Class(classname = "LESSWarn",
                           }
                         ))
 
+
 KDTree <- R6::R6Class(classname = "KDTree",
                       private = list(
                         X = NULL
@@ -271,6 +272,17 @@ KDTree <- R6::R6Class(classname = "KDTree",
                         }
                       ))
 
+#' @title KMeans Clustering
+#'
+#' @description Wrapper R6 Class of stats:kmeans function that can be used for LESSRegressor and LESSClassifier
+#'
+#' @param n_clusters the number of clusters. A random set of (distinct) rows in X is chosen as the initial centres (default to 8)
+#' @param n_init how many random sets should be chosen? (default to 10)
+#' @param max_iter the maximum number of iterations allowed (default to 300).
+#' @param random_state seed number to be used for fixing the randomness (default to NULL).
+#'
+#' @return R6 Class of KMeans
+#' @export
 KMeans <- R6::R6Class(classname = "KMeans",
                       inherit = BaseEstimator,
                       private = list(
@@ -283,12 +295,28 @@ KMeans <- R6::R6Class(classname = "KMeans",
                         random_state = NULL
                       ),
                       public = list(
+                        #' @description Creates a new instance of R6 Class of KMeans
+                        #'
+                        #' @examples
+                        #' km <- KMeans$new()
+                        #' km <- KMeans$new(n_clusters = 10)
+                        #' km <- KMeans$new(n_clusters = 10, random_state = 100)
                         initialize = function(n_clusters = 8, n_init = 10, max_iter = 300, random_state = NULL){
                           private$n_clusters = n_clusters
                           private$n_init = n_init
                           private$max_iter = max_iter
                           private$random_state = random_state
                         },
+
+                        #' @description Perform k-means clustering on a data matrix.
+                        #'
+                        #' @param X numeric matrix of data, or an object that can be coerced to such a matrix (such as a numeric vector or a data frame with all numeric columns).
+                        #'
+                        #' @return Fitted R6 class of KMeans() that has 'cluster_centers' and 'labels' attributes
+                        #'
+                        #' @examples
+                        #' km <- KMeans$new()
+                        #' km$fit(X)
                         fit = function(X){
                           set.seed(private$random_state)
                           private$model <- kmeans(X, centers = private$n_clusters, iter.max = private$max_iter, nstart = private$n_init)
@@ -296,9 +324,11 @@ KMeans <- R6::R6Class(classname = "KMeans",
                           private$labels <- private$model$cluster
                           invisible(self)
                         },
+                        #' @description Auxiliary function returning the cluster centers
                         get_cluster_centers = function(){
                           return(private$cluster_centers)
                         },
+                        #' @description Auxiliary function returning a vector of integers (from 1:k) indicating the cluster to which each point is allocated.
                         get_labels = function(){
                           return(private$labels)
                         }
@@ -488,6 +518,15 @@ check_X_y = function(X, y){
 
 ###################
 
+#' @title LESSBase
+#'
+#' @description The base class for LESSRegressor and LESSClassifier
+#'
+#' @param isFitted Flag to check whether LESS is fitted
+#' @param replications List to store the replications
+#' @param scobject Scaling object used for normalization (less::StandardScaler)
+#'
+#' @return R6 class of LESSBase
 LESSBase <- R6::R6Class(classname = "LESSBase",
                       inherit = SklearnEstimator,
                       private = list(
@@ -1006,91 +1045,121 @@ LESSBase <- R6::R6Class(classname = "LESSBase",
                         }
                       ),
                       public = list(
-                         initialize = function(replications = NULL, scobject = NULL, isFitted = FALSE) {
+                        #' @description Creates a new instance of R6 Class of LESSBase
+                        initialize = function(replications = NULL, scobject = NULL, isFitted = FALSE) {
                           private$replications = replications
                           private$scobject = scobject
                           private$isFitted = isFitted
                         },
 
+                        #' @description Prints detailed information of the class
                         print = function() {
                           n_subsets <- unlist(private$n_subsets)
                           cat("Number of subsets: ", n_subsets, "\n")
                           cat("Number of samples in each subset: ", private$n_neighbors, "\n")
                         },
 
+                        #' @description  Auxiliary function returning the number of subsets
                         get_n_subsets = function(){
-                          # Auxiliary function returning the number of subsets
                           return(private$n_subsets)
                         },
 
+                        #' @description Auxiliary function returning the number of neighbors
                         get_n_neighbors = function(){
-                          # Auxiliary function returning the number of neighbors
                           return(private$n_neighbors)
                         },
 
+                        #' @description Auxiliary function returning the percentage of samples used to set the number of neighbors
                         get_frac = function(){
-                          # Auxiliary function returning the percentage of samples used to set the number of neighbors
                           return(private$frac)
                         },
 
+                        #' @description Auxiliary function returning the number of replications
                         get_n_replications = function(){
-                          # Auxiliary function returning the number of replications
                           return(private$n_replications)
                         },
 
+                        #' @description Auxiliary function returning the flag for normalization
                         get_d_normalize = function(){
-                          # Auxiliary function returning the flag for normalization
                           return(private$d_normalize)
                         },
 
+                        #' @description Auxiliary function returning the flag for scaling
                         get_scaling = function(){
-                          # Auxiliary function returning the flag for scaling
                           return(private$scaling)
                         },
 
+                        #' @description Auxiliary function returning the validation set size
                         get_val_size = function(){
-                          # Auxiliary function returning the validation set size
                           return(private$val_size)
                         },
 
+                        #' @description Auxiliary function returning the random seed
                         get_random_state = function(){
-                          # Auxiliary function returning the random seed
                           return(private$random_state)
                         },
 
+                        #' @description Auxiliary function returning the isFitted flag
                         get_isFitted = function(){
-                          # Auxiliary function returning the isFitted flag
                           return(private$isFitted)
                         }
                       )
                     )
 
-#' LESSRegressor
+#' @title  LESSRegressor
 #'
+#' @description Regressor for Learning with Subset Selection (LESS)
+#'
+#' @param frac fraction of total samples used for the number of neighbors (default is 0.05)
+#' @param n_neighbors number of neighbors (default is NULL)
+#' @param n_subsets number of subsets (default is NULL)
+#' @param n_replications number of replications (default is 50)
+#' @param d_normalize distance normalization (default is TRUE)
+#' @param val_size percentage of samples used for validation (default is NULL - no validation)
+#' @param random_state initialization of the random seed (default is NULL)
+#' @param tree_method method used for constructing the nearest neighbor tree, e.g., less::KDTree (default)
+#' @param cluster_method method used for clustering the subsets, e.g., less::KMeans (default is NULL)
+#' @param local_estimator estimator for the local models (default is less::LinearRegression)
+#' @param global_estimator estimator for the global model (default is less::DecisionTreeRegressor)
+#' @param distance_function distance function evaluating the distance from a subset to a sample,
+#' e.g., df(subset, sample) which returns a vector of distances (default is RBF(subset, sample, 1.0/n_subsets^2))
+#' @param scaling flag to normalize the input data (default is TRUE)
+#' @param warnings flag to turn on (TRUE) or off (FALSE) the warnings (default is TRUE)
+#'
+#' @return R6 class of LESSRegressor
+#' @seealso [LESSBase]
 #' @export
 LESSRegressor <- R6::R6Class(classname = "LESSRegressor",
                              inherit = LESSBase,
                              private = list(
                                frac = NULL,
-                               n_replications = NULL,
-                               random_state = NULL,
-                               n_subsets = NULL,
                                n_neighbors = NULL,
-                               local_estimator = NULL,
+                               n_subsets = NULL,
+                               n_replications = NULL,
                                d_normalize = NULL,
-                               global_estimator = NULL,
-                               scaling = NULL,
-                               cluster_method = NULL,
-                               distance_function = NULL,
-                               rng = NULL,
-                               warnings = NULL,
                                val_size = NULL,
-                               tree_method = NULL
+                               random_state = NULL,
+                               tree_method = NULL,
+                               cluster_method = NULL,
+                               local_estimator = NULL,
+                               global_estimator = NULL,
+                               distance_function = NULL,
+                               scaling = NULL,
+                               warnings = NULL,
+                               rng = NULL
                              ),
                              public = list(
-                               initialize = function(frac = NULL, n_replications = 20, random_state = NULL, n_subsets = NULL, n_neighbors = NULL,
-                                                     local_estimator = LinearRegression$new(), d_normalize = TRUE, global_estimator = DecisionTreeRegressor$new(), scaling = TRUE,
-                                                     cluster_method = NULL, distance_function = NULL, warnings = TRUE, val_size = NULL, tree_method = function(X) KDTree$new(X)) {
+                               #' @description Creates a new instance of R6 Class of LESSRegressor
+                               #'
+                               #' @examples
+                               #' lessRegressor <- LESSRegressor$new()
+                               #' lessRegressor <- LESSRegressor$new(val_size = 0.3)
+                               #' lessRegressor <- LESSRegressor$new(cluster_method = less::KMeans$new())
+                               #' lessRegressor <- LESSRegressor$new(val_size = 0.3)
+                               initialize = function(frac = NULL, n_neighbors = NULL, n_subsets = NULL, n_replications = 20, d_normalize = TRUE, val_size = NULL,
+                                                     random_state = NULL, tree_method = function(X) KDTree$new(X), cluster_method = NULL,
+                                                     local_estimator = LinearRegression$new(), global_estimator = DecisionTreeRegressor$new(), distance_function = NULL,
+                                                     scaling = TRUE, warnings = TRUE) {
                                  private$frac = frac
                                  private$n_replications = n_replications
                                  private$random_state = random_state
@@ -1107,6 +1176,23 @@ LESSRegressor <- R6::R6Class(classname = "LESSRegressor",
                                  private$val_size = val_size
                                  private$tree_method = tree_method
                                },
+
+                               #' @description
+                               #' Dummy fit function that calls the proper method according to validation and clustering parameters
+                               #' Options are:
+                               #' - Default fitting (no validation set, no clustering)
+                               #' - Fitting with validation set (no clustering)
+                               #' - Fitting with clustering (no) validation set)
+                               #' - Fitting with validation set and clustering
+                               #'
+                               #' @param X 2D matrix or dataframe that includes predictors
+                               #' @param y 1D vector or (n,1) dimensional matrix/dataframe that includes response variables
+                               #'
+                               #' @return Fitted R6 Class of LESSRegressor
+                               #'
+                               #' @examples
+                               #' lessRegressor <- LESSRegressor$new()
+                               #' lessRegressor$fit(X, y)
                                fit = function(X, y){
 
                                  # Check that X and y have correct shape
@@ -1140,6 +1226,23 @@ LESSRegressor <- R6::R6Class(classname = "LESSRegressor",
                                  private$isFitted <- TRUE
                                  invisible(self)
                                },
+
+                               #' @description
+                               #' Predictions are evaluated for the test samples in X0
+                               #'
+                               #' @param X0 2D matrix or dataframe that includes predictors
+                               #'
+                               #' @return Predicted values of the given predictors
+                               #'
+                               #' @examples
+                               #' lessRegressor <- LESSRegressor$new()
+                               #' lessRegressor$fit(X, y)
+                               #' preds <- lessRegressor$predict(X0)
+                               #'
+                               #' lessRegressor <- LESSRegressor$new()
+                               #' preds <- lessRegressor$fit(X, y)$predict(X0)
+                               #'
+                               #' preds <- LESSRegressor$new()$fit(X, y)$predict(X0)
                                predict = function(X0) {
 
                                  check_is_fitted(self)
@@ -1211,19 +1314,22 @@ LESSRegressor <- R6::R6Class(classname = "LESSRegressor",
 
 ###########################
 
+abalone <- read.csv(file='datasets/abalone.csv', header = FALSE)
 
-#' Apply LESS regression
+#########################
+
+
+#' #' Apply LESS regression
+#'
+#' @param data
 #'
 #' @export
-#'
-#' @examples lessReg()
-lessReg <- function() {
+lessReg <- function(data = abalone) {
   # UNCOMMENT THIS CODE BLOCK TO PROFILE THE CODE AND SEE A PERFORMANCE ANALYSIS OF THE CODE
   # profvis::profvis({
   #
   # })
 
-  data <- read.csv(file='datasets/abalone.csv', header = FALSE)
 
   # Now Selecting 70% of data as sample from total 'n' rows of the data
   set.seed(1)
@@ -1248,7 +1354,7 @@ lessReg <- function() {
   # cat("MAPE: ", mape, "\n")
 
   cat("Total number of training samples: ", nrow(X_train), "\n")
-  LESS <- LESSRegressor$new(val_size = 12)
+  LESS <- LESSRegressor$new(val_size = 0.3)
   preds <- LESS$fit(X_train, y_train)$predict(X_test)
   print(LESS)
   print(head(matrix(c(y_test, preds), ncol = 2)))

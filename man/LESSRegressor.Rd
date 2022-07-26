@@ -3,10 +3,45 @@
 \name{LESSRegressor}
 \alias{LESSRegressor}
 \title{LESSRegressor}
+\value{
+R6 class of LESSRegressor
+}
 \description{
-LESSRegressor
+Regressor for Learning with Subset Selection (LESS)
+}
+\examples{
 
-LESSRegressor
+## ------------------------------------------------
+## Method `LESSRegressor$new`
+## ------------------------------------------------
+
+lessRegressor <- LESSRegressor$new()
+lessRegressor <- LESSRegressor$new(val_size = 0.3)
+lessRegressor <- LESSRegressor$new(cluster_method = less::KMeans$new())
+lessRegressor <- LESSRegressor$new(val_size = 0.3)
+
+## ------------------------------------------------
+## Method `LESSRegressor$fit`
+## ------------------------------------------------
+
+lessRegressor <- LESSRegressor$new()
+lessRegressor$fit(X, y)
+
+## ------------------------------------------------
+## Method `LESSRegressor$predict`
+## ------------------------------------------------
+
+lessRegressor <- LESSRegressor$new()
+lessRegressor$fit(X, y)
+preds <- lessRegressor$predict(X0)
+
+lessRegressor <- LESSRegressor$new()
+preds <- lessRegressor$fit(X, y)$predict(X0)
+
+preds <- LESSRegressor$new()$fit(X, y)$predict(X0)
+}
+\seealso{
+\link{LESSBase}
 }
 \section{Super classes}{
 \code{\link[less:BaseEstimator]{less::BaseEstimator}} -> \code{\link[less:SklearnEstimator]{less::SklearnEstimator}} -> \code{\link[less:LESSBase]{less::LESSBase}} -> \code{LESSRegressor}
@@ -23,16 +58,13 @@ LESSRegressor
 \if{html}{\out{
 <details><summary>Inherited methods</summary>
 <ul>
+<li><span class="pkg-link" data-pkg="less" data-topic="BaseEstimator" data-id="get_all_fields"><a href='../../less/html/BaseEstimator.html#method-BaseEstimator-get_all_fields'><code>less::BaseEstimator$get_all_fields()</code></a></li>
 <li><span class="pkg-link" data-pkg="less" data-topic="BaseEstimator" data-id="get_attributes"><a href='../../less/html/BaseEstimator.html#method-BaseEstimator-get_attributes'><code>less::BaseEstimator$get_attributes()</code></a></li>
-<li><span class="pkg-link" data-pkg="less" data-topic="BaseEstimator" data-id="public_fields"><a href='../../less/html/BaseEstimator.html#method-BaseEstimator-public_fields'><code>less::BaseEstimator$public_fields()</code></a></li>
 <li><span class="pkg-link" data-pkg="less" data-topic="BaseEstimator" data-id="set_random_state"><a href='../../less/html/BaseEstimator.html#method-BaseEstimator-set_random_state'><code>less::BaseEstimator$set_random_state()</code></a></li>
-<li><span class="pkg-link" data-pkg="less" data-topic="LESSBase" data-id="check_input"><a href='../../less/html/LESSBase.html#method-LESSBase-check_input'><code>less::LESSBase$check_input()</code></a></li>
-<li><span class="pkg-link" data-pkg="less" data-topic="LESSBase" data-id="fitnoval"><a href='../../less/html/LESSBase.html#method-LESSBase-fitnoval'><code>less::LESSBase$fitnoval()</code></a></li>
-<li><span class="pkg-link" data-pkg="less" data-topic="LESSBase" data-id="fitnovalc"><a href='../../less/html/LESSBase.html#method-LESSBase-fitnovalc'><code>less::LESSBase$fitnovalc()</code></a></li>
-<li><span class="pkg-link" data-pkg="less" data-topic="LESSBase" data-id="fitval"><a href='../../less/html/LESSBase.html#method-LESSBase-fitval'><code>less::LESSBase$fitval()</code></a></li>
-<li><span class="pkg-link" data-pkg="less" data-topic="LESSBase" data-id="fitvalc"><a href='../../less/html/LESSBase.html#method-LESSBase-fitvalc'><code>less::LESSBase$fitvalc()</code></a></li>
+<li><span class="pkg-link" data-pkg="less" data-topic="SklearnEstimator" data-id="get_type"><a href='../../less/html/SklearnEstimator.html#method-SklearnEstimator-get_type'><code>less::SklearnEstimator$get_type()</code></a></li>
 <li><span class="pkg-link" data-pkg="less" data-topic="LESSBase" data-id="get_d_normalize"><a href='../../less/html/LESSBase.html#method-LESSBase-get_d_normalize'><code>less::LESSBase$get_d_normalize()</code></a></li>
 <li><span class="pkg-link" data-pkg="less" data-topic="LESSBase" data-id="get_frac"><a href='../../less/html/LESSBase.html#method-LESSBase-get_frac'><code>less::LESSBase$get_frac()</code></a></li>
+<li><span class="pkg-link" data-pkg="less" data-topic="LESSBase" data-id="get_isFitted"><a href='../../less/html/LESSBase.html#method-LESSBase-get_isFitted'><code>less::LESSBase$get_isFitted()</code></a></li>
 <li><span class="pkg-link" data-pkg="less" data-topic="LESSBase" data-id="get_n_neighbors"><a href='../../less/html/LESSBase.html#method-LESSBase-get_n_neighbors'><code>less::LESSBase$get_n_neighbors()</code></a></li>
 <li><span class="pkg-link" data-pkg="less" data-topic="LESSBase" data-id="get_n_replications"><a href='../../less/html/LESSBase.html#method-LESSBase-get_n_replications'><code>less::LESSBase$get_n_replications()</code></a></li>
 <li><span class="pkg-link" data-pkg="less" data-topic="LESSBase" data-id="get_n_subsets"><a href='../../less/html/LESSBase.html#method-LESSBase-get_n_subsets'><code>less::LESSBase$get_n_subsets()</code></a></li>
@@ -40,7 +72,6 @@ LESSRegressor
 <li><span class="pkg-link" data-pkg="less" data-topic="LESSBase" data-id="get_scaling"><a href='../../less/html/LESSBase.html#method-LESSBase-get_scaling'><code>less::LESSBase$get_scaling()</code></a></li>
 <li><span class="pkg-link" data-pkg="less" data-topic="LESSBase" data-id="get_val_size"><a href='../../less/html/LESSBase.html#method-LESSBase-get_val_size'><code>less::LESSBase$get_val_size()</code></a></li>
 <li><span class="pkg-link" data-pkg="less" data-topic="LESSBase" data-id="print"><a href='../../less/html/LESSBase.html#method-LESSBase-print'><code>less::LESSBase$print()</code></a></li>
-<li><span class="pkg-link" data-pkg="less" data-topic="LESSBase" data-id="set_local_attributes"><a href='../../less/html/LESSBase.html#method-LESSBase-set_local_attributes'><code>less::LESSBase$set_local_attributes()</code></a></li>
 </ul>
 </details>
 }}
@@ -48,23 +79,69 @@ LESSRegressor
 \if{html}{\out{<a id="method-LESSRegressor-new"></a>}}
 \if{latex}{\out{\hypertarget{method-LESSRegressor-new}{}}}
 \subsection{Method \code{new()}}{
+Creates a new instance of R6 Class of LESSRegressor
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{LESSRegressor$new(
   frac = NULL,
-  n_replications = 20,
-  random_state = NULL,
-  n_subsets = NULL,
   n_neighbors = NULL,
-  local_estimator = LinearRegression$new(),
+  n_subsets = NULL,
+  n_replications = 20,
   d_normalize = TRUE,
-  global_estimator = DecisionTreeRegressor$new(),
-  scaling = TRUE,
-  cluster_method = NULL,
-  distance_function = NULL,
-  warnings = TRUE,
   val_size = NULL,
-  tree_method = function(X) KDTree$new(X)
+  random_state = NULL,
+  tree_method = function(X) KDTree$new(X),
+  cluster_method = NULL,
+  local_estimator = LinearRegression$new(),
+  global_estimator = DecisionTreeRegressor$new(),
+  distance_function = NULL,
+  scaling = TRUE,
+  warnings = TRUE
 )}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{frac}}{fraction of total samples used for the number of neighbors (default is 0.05)}
+
+\item{\code{n_neighbors}}{number of neighbors (default is NULL)}
+
+\item{\code{n_subsets}}{number of subsets (default is NULL)}
+
+\item{\code{n_replications}}{number of replications (default is 50)}
+
+\item{\code{d_normalize}}{distance normalization (default is TRUE)}
+
+\item{\code{val_size}}{percentage of samples used for validation (default is NULL - no validation)}
+
+\item{\code{random_state}}{initialization of the random seed (default is NULL)}
+
+\item{\code{tree_method}}{method used for constructing the nearest neighbor tree, e.g., less::KDTree (default)}
+
+\item{\code{cluster_method}}{method used for clustering the subsets, e.g., less::KMeans (default is NULL)}
+
+\item{\code{local_estimator}}{estimator for the local models (default is less::LinearRegression)}
+
+\item{\code{global_estimator}}{estimator for the global model (default is less::DecisionTreeRegressor)}
+
+\item{\code{distance_function}}{distance function evaluating the distance from a subset to a sample,
+e.g., df(subset, sample) which returns a vector of distances (default is RBF(subset, sample, 1.0/n_subsets^2))}
+
+\item{\code{scaling}}{flag to normalize the input data (default is TRUE)}
+
+\item{\code{warnings}}{flag to turn on (TRUE) or off (FALSE) the warnings (default is TRUE)}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Examples}{
+\if{html}{\out{<div class="r example copy">}}
+\preformatted{lessRegressor <- LESSRegressor$new()
+lessRegressor <- LESSRegressor$new(val_size = 0.3)
+lessRegressor <- LESSRegressor$new(cluster_method = less::KMeans$new())
+lessRegressor <- LESSRegressor$new(val_size = 0.3)
+}
+\if{html}{\out{</div>}}
+
 }
 
 }
@@ -72,8 +149,37 @@ LESSRegressor
 \if{html}{\out{<a id="method-LESSRegressor-fit"></a>}}
 \if{latex}{\out{\hypertarget{method-LESSRegressor-fit}{}}}
 \subsection{Method \code{fit()}}{
+Dummy fit function that calls the proper method according to validation and clustering parameters
+Options are:
+\itemize{
+\item Default fitting (no validation set, no clustering)
+\item Fitting with validation set (no clustering)
+\item Fitting with clustering (no) validation set)
+\item Fitting with validation set and clustering
+}
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{LESSRegressor$fit(X, y)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{X}}{2D matrix or dataframe that includes predictors}
+
+\item{\code{y}}{1D vector or (n,1) dimensional matrix/dataframe that includes response variables}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+Fitted R6 Class of LESSRegressor
+}
+\subsection{Examples}{
+\if{html}{\out{<div class="r example copy">}}
+\preformatted{lessRegressor <- LESSRegressor$new()
+lessRegressor$fit(X, y)
+}
+\if{html}{\out{</div>}}
+
 }
 
 }
@@ -81,8 +187,34 @@ LESSRegressor
 \if{html}{\out{<a id="method-LESSRegressor-predict"></a>}}
 \if{latex}{\out{\hypertarget{method-LESSRegressor-predict}{}}}
 \subsection{Method \code{predict()}}{
+Predictions are evaluated for the test samples in X0
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{LESSRegressor$predict(X0)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{X0}}{2D matrix or dataframe that includes predictors}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+Predicted values of the given predictors
+}
+\subsection{Examples}{
+\if{html}{\out{<div class="r example copy">}}
+\preformatted{lessRegressor <- LESSRegressor$new()
+lessRegressor$fit(X, y)
+preds <- lessRegressor$predict(X0)
+
+lessRegressor <- LESSRegressor$new()
+preds <- lessRegressor$fit(X, y)$predict(X0)
+
+preds <- LESSRegressor$new()$fit(X, y)$predict(X0)
+}
+\if{html}{\out{</div>}}
+
 }
 
 }

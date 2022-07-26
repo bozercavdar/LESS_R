@@ -2,13 +2,13 @@
 % Please edit documentation in R/less.R
 \name{lessReg}
 \alias{lessReg}
-\title{Apply LESS regression}
+\title{#' Apply LESS regression}
 \usage{
-lessReg()
+lessReg(data = abalone)
+}
+\arguments{
+\item{data}{}
 }
 \description{
-Apply LESS regression
-}
-\examples{
-lessReg()
+#' Apply LESS regression
 }
