@@ -4,10 +4,10 @@
 \alias{KMeans}
 \title{KMeans Clustering}
 \value{
-R6 class of kmeans
+R6 Class of KMeans
 }
 \description{
-Wrapper R6 Class of stats:kmeans function that can be used for LESSRegressor and LESSClassifier
+Wrapper R6 Class of stats::kmeans function that can be used for LESSRegressor and LESSClassifier
 }
 \examples{
 
@@ -25,6 +25,9 @@ km <- KMeans$new(n_clusters = 10, random_state = 100)
 
 km <- KMeans$new()
 km$fit(X)
+}
+\seealso{
+\code{\link[stats:kmeans]{stats::kmeans()}}
 }
 \section{Super class}{
 \code{\link[less:BaseEstimator]{less::BaseEstimator}} -> \code{KMeans}

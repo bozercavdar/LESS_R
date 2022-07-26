@@ -1,6 +1,11 @@
 ####################
 # HELPER CLASSES
 ####################
+#' @title BaseEstimator
+#'
+#' @description A dummy base R6 class that provides get_all_fields, get_attributes and set_random_state functionalities for estimators
+#'
+#' @return R6 Class of BaseEstimator
 BaseEstimator <- R6::R6Class(classname = "BaseEstimator",
                              private = list(
                                priv_fields = function(){
@@ -25,9 +30,11 @@ BaseEstimator <- R6::R6Class(classname = "BaseEstimator",
                                }
                              ),
                              public = list(
+                               #' @description Auxiliary function returning the name of all private and public fields of the self class
                                get_all_fields = function(){
                                  return(append(private$priv_fields(), private$public_fields()))
                                },
+                               #' @description Auxiliary function returning the name and values of all private and public fields of the self class
                                get_attributes = function(){
                                  priv_values <- purrr::map(private$priv_fields(), ~.subset2(private, .x))
                                  public_values <- purrr::map(private$public_fields(), ~.subset2(self, .x))
@@ -35,27 +42,38 @@ BaseEstimator <- R6::R6Class(classname = "BaseEstimator",
                                  names(public_values) <- private$public_fields()
                                  return(append(priv_values, public_values))
                                },
+                               #' @description Auxiliary function that sets random state attribute of the self class
+                               #'
+                               #' @param random_state seed number to be set as random state
+                               #' @return self
                                set_random_state = function(random_state){
                                  private$random_state <- random_state
                                  invisible(self)
                                }
                              ))
-
+#' @title SklearnEstimator
+#'
+#' @description A dummy base R6 class that includes fit, predict functions for estimators
+#'
+#' @return R6 Class of SklearnEstimator
 SklearnEstimator <- R6::R6Class(classname = "SklearnEstimator",
                                 inherit = BaseEstimator,
                                 private = list(
                                   type = "estimator"
                                 ),
                                 public = list(
+                                  #' @description Dummy fit function
                                   fit = function() {
                                     # FIXME
                                     print("dummy fit function")
                                     invisible(self)
                                   },
+                                  #' @description Dummy predict function
                                   predict = function(){
                                     print("dummy predict function")
                                     invisible(self)
                                   },
+                                  #' @description Auxiliary function returning the type of the class e.g 'estimator'
                                   get_type = function(){
                                     return(private$type)
                                   }
@@ -84,6 +102,13 @@ Replication <- R6::R6Class(classname = "Replication",
                          }
                        ))
 
+#' @title LinearRegression
+#'
+#' @description Wrapper R6 Class of stats::lm function that can be used for LESSRegressor and LESSClassifier
+#'
+#' @return R6 Class of LinearRegression
+#' @seealso [stats::lm()]
+#' @export
 LinearRegression <- R6::R6Class(classname = "LinearRegression",
                                 inherit = SklearnEstimator,
                                 private = list(
@@ -91,6 +116,16 @@ LinearRegression <- R6::R6Class(classname = "LinearRegression",
                                   model = NULL
                                 ),
                                 public = list(
+                                  #' @description Fits a linear model (y ~ X)
+                                  #'
+                                  #' @param X 2D matrix or dataframe that includes predictors
+                                  #' @param y 1D vector or (n,1) dimensional matrix/dataframe that includes response variables
+                                  #'
+                                  #' @return Fitted R6 Class of LinearRegression
+                                  #'
+                                  #' @examples
+                                  #' lr <- LinearRegression$new()
+                                  #' lr$fit(X, y)
                                   fit = function(X, y) {
                                     df <- prepareDataset(X, y)
                                     private$model <- lm(y ~ ., data = df)
@@ -100,13 +135,30 @@ LinearRegression <- R6::R6Class(classname = "LinearRegression",
                                     # }
                                     invisible(self)
                                   },
-                                  predict = function(X) {
-                                    data <- prepareXset(X)
+                                  #' @description Predict regression value for X.
+                                  #'
+                                  #' @param X0 2D matrix or dataframe that includes predictors
+                                  #'
+                                  #' @return The predict values.
+                                  #'
+                                  #' @examples
+                                  #' lr <- LinearRegression$new()
+                                  #' lr$fit(X, y)
+                                  #' preds <- lr$predict(X0)
+                                  #'
+                                  #' lr <- LinearRegression$new()
+                                  #' preds <- lr$fit(X, y)$predict(X0)
+                                  #'
+                                  #' preds <- LinearRegression$new()$fit(X, y)$predict(X0)
+                                  predict = function(X0) {
+                                    data <- prepareXset(X0)
                                     suppressWarnings(predict(private$model, newdata = data))
                                   },
+                                  #' @description Auxiliary function returning the summary of the fitted model
                                   printModel = function() {
                                     summary(private$model)
                                   },
+                                  #' @description Auxiliary function returning the estimator type e.g 'regressor', 'classifier'
                                   get_estimator_type = function() {
                                     return(private$estimator_type)
                                   }
@@ -140,7 +192,13 @@ LinearRegression <- R6::R6Class(classname = "LinearRegression",
 #                                      )
 #                                      )
 
-# Decision Tree wrapper class with using party package
+#' @title DecisionTreeRegressor
+#'
+#' @description Wrapper R6 Class of party::ctree function that can be used for LESSRegressor and LESSClassifier
+#'
+#' @return R6 Class of DecisionTreeRegressor
+#' @seealso [party::ctree()]
+#' @export
 DecisionTreeRegressor <- R6::R6Class(classname = "DecisionTreeRegressor",
                                      inherit = SklearnEstimator,
                                      private = list(
@@ -148,6 +206,16 @@ DecisionTreeRegressor <- R6::R6Class(classname = "DecisionTreeRegressor",
                                        model = NULL
                                      ),
                                      public = list(
+                                       #' @description Build a decision tree regressor from the training set (X, y).
+                                       #'
+                                       #' @param X 2D matrix or dataframe that includes predictors
+                                       #' @param y 1D vector or (n,1) dimensional matrix/dataframe that includes response variables
+                                       #'
+                                       #' @return Fitted R6 Class of DecisionTreeRegressor
+                                       #'
+                                       #' @examples
+                                       #' dt <- DecisionTreeRegressor$new()
+                                       #' dt$fit(X, y)
                                        fit = function(X, y) {
                                          df <- prepareDataset(X, y)
                                          private$model <- party::ctree(
@@ -157,10 +225,26 @@ DecisionTreeRegressor <- R6::R6Class(classname = "DecisionTreeRegressor",
                                          # plot(private$model)
                                          invisible(self)
                                        },
-                                       predict = function(X) {
-                                         data <- prepareXset(X)
+                                       #' @description Predict regression value for X.
+                                       #'
+                                       #' @param X0 2D matrix or dataframe that includes predictors
+                                       #'
+                                       #' @return The predict values.
+                                       #'
+                                       #' @examples
+                                       #' dt <- DecisionTreeRegressor$new()
+                                       #' dt$fit(X, y)
+                                       #' preds <- dt$predict(X0)
+                                       #'
+                                       #' dt <- DecisionTreeRegressor$new()
+                                       #' preds <- dt$fit(X, y)$predict(X0)
+                                       #'
+                                       #' preds <- DecisionTreeRegressor$new()$fit(X, y)$predict(X0)
+                                       predict = function(X0) {
+                                         data <- prepareXset(X0)
                                          predict(private$model, data)
                                        },
+                                       #' @description Auxiliary function returning the estimator type e.g 'regressor', 'classifier'
                                        get_estimator_type = function() {
                                          return(private$estimator_type)
                                        }
@@ -256,16 +340,39 @@ LESSWarn <- R6::R6Class(classname = "LESSWarn",
                           }
                         ))
 
-
+#' @title KDTree - Nearest Neighbor Search
+#'
+#' @description Wrapper R6 Class of RANN::nn2 function that can be used for LESSRegressor and LESSClassifier
+#'
+#' @param X An \strong{M x d} data.frame or matrix, where each of the \strong{M} rows is a point or a (column) vector (where \strong{d=1}).
+#'
+#' @return R6 Class of KDTree
+#' @seealso [RANN::nn2()]
+#' @export
 KDTree <- R6::R6Class(classname = "KDTree",
                       private = list(
                         X = NULL
                       ),
                       public = list(
+                        #' @description Creates a new instance of R6 Class of KDTree
+                        #'
+                        #' @examples
+                        #' kdt <- KDTree$new(X)
                         initialize = function(X = NULL) {
                           private$X = X
                         },
-                        query = function(query_X, k=1){
+                        #' @description Finds the p number of near neighbours for each point in an input/output dataset. The advantage of the kd-tree is that it runs in O(M log M) time.
+                        #'
+                        #' @param query_X A set of \strong{N x d} points that will be queried against \code{X}. \strong{d}, the number of columns, must be the same as \code{X}.
+                        #' If missing, defaults to  \code{X}.
+                        #' @param k The maximum number of nearest neighbours to compute (deafults to 1).
+                        #'
+                        #' @return A \code{list} of length 2 with elements:\tabular{ll}{
+                        #'    \code{nn.idx} \tab A \strong{N x k} integer matrix returning the near neighbour indices. \cr
+                        #'    \tab \cr
+                        #'    \code{nn.dists} \tab A \strong{N x k} matrix returning the near neighbour Euclidean distances \cr
+                        #' }
+                        query = function(query_X = private$X, k=1){
                           # query the tree for the k nearest neighbors
                           query <- as.matrix(query_X)
                           RANN::nn2(data = private$X, query = query, k = k)
@@ -274,7 +381,7 @@ KDTree <- R6::R6Class(classname = "KDTree",
 
 #' @title KMeans Clustering
 #'
-#' @description Wrapper R6 Class of stats:kmeans function that can be used for LESSRegressor and LESSClassifier
+#' @description Wrapper R6 Class of stats::kmeans function that can be used for LESSRegressor and LESSClassifier
 #'
 #' @param n_clusters the number of clusters. A random set of (distinct) rows in X is chosen as the initial centres (default to 8)
 #' @param n_init how many random sets should be chosen? (default to 10)
@@ -282,6 +389,7 @@ KDTree <- R6::R6Class(classname = "KDTree",
 #' @param random_state seed number to be used for fixing the randomness (default to NULL).
 #'
 #' @return R6 Class of KMeans
+#' @seealso [stats::kmeans()]
 #' @export
 KMeans <- R6::R6Class(classname = "KMeans",
                       inherit = BaseEstimator,
