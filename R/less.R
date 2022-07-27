@@ -444,18 +444,35 @@ KMeans <- R6::R6Class(classname = "KMeans",
 # HELPER FUNCTIONS
 ####################
 
-# RBF kernel - L2 norm
-# This is is used as the default distance function in LESS
+#' @title RBF kernel - L2 norm
+#'
+#' @description The default distance function in LESS.
+#'
+#' @param data Data that includes points in shape of \strong{(M x d)}
+#' @param center A constant point in shape of \strong{(1 x d)}
+#' @param coeff Coefficient value for RBF kernel
+#'
+#' @return A numeric vector containing the Radial basis function kernel distance between each point in \strong{data} and \strong{center}.
+#' @export
 rbf <- function(data, center, coeff=0.01){
-  dataDiff <- sweep(data, 2, center) #extract center from all rows of data
+  dataDiff <- sweep(data, 2, center) #extract center from all rows of data e.g. (data-center)
   normRows <- wordspace::rowNorms(dataDiff, method = "euclidean", p=2) #take l2 norms of each row
   exp(-coeff * normRows)
 }
 
-# L1 norm - Manhattan distance
+#' @title Laplacian kernel - L1 norm
+#'
+#' @description An alternative distance function that can be used in LESS.
+#'
+#' @param data Data that includes points in shape of \strong{(M x d)}
+#' @param center A constant point in shape of \strong{(1 x d)}
+#' @param coeff Coefficient value for Laplacian kernel
+#'
+#' @return A numeric vector containing the laplacian kernel distance between each point in \strong{data} and \strong{center}.
+#' @export
 laplacian <- function(data, center, coeff=0.01){
-  dataDiff <- sweep(data, 2, center) #extract center from all rows of data
-  normRows <- wordspace::rowNorms(dataDiff, method = "manhattan", p=1) #take l2 norms of each row
+  dataDiff <- sweep(data, 2, center) #extract center from all rows of data e.g. (data-center)
+  normRows <- wordspace::rowNorms(dataDiff, method = "manhattan", p=1) #take l1 norms of each row
   exp(-coeff * normRows)
 }
 
@@ -516,10 +533,34 @@ getClassName = function(obj) {
   class(obj)[1]
 }
 
-# splits the input data into train and test sets
+#' @title Dataset splitting
+#'
+#' @description Split dataframes or matrices into random train and test subsets.
+#'
+#' @param data Dataset that is going to be split
+#' @param test_size Represents the proportion of the dataset to include in the test split.
+#' Should be between 0.0 and 1.0 (defaults to 0.3)
+#' @param random_state Controls the shuffling applied to the data before applying the split.
+#' Pass an int for reproducible output across multiple function calls (defaults to NULL)
+#'
+#' @return A \code{list} of length 4 with elements:\tabular{ll}{
+#'    \code{X_train} \tab Training input variables  \cr
+#'    \tab \cr
+#'    \code{y_train} \tab Training response variables   \cr
+#'    \tab \cr
+#'    \code{X_test} \tab Test input variables \cr
+#'    \tab \cr
+#'    \code{y_test} \tab Test response variables \cr
+#' }
+#' @export
 train_test_split = function(data, test_size=0.3, random_state=NULL){
+  if(!is.null(test_size)) {
+    if(test_size <= 0.0 | test_size >= 1.0){
+      stop("\tParameter test_size should be in the interval (0, 1).")
+    }
+  }
   set.seed(random_state)
-  sample <- sample.int(n = nrow(data), size = floor(.7*nrow(data)), replace = F)
+  sample <- sample.int(n = nrow(data), size = floor((1-test_size)*nrow(data)), replace = F)
   train <- data[sample, ]
   test  <- data[-sample, ]
 
@@ -1421,6 +1462,7 @@ LESSRegressor <- R6::R6Class(classname = "LESSRegressor",
 ###########################
 
 abalone <- read.csv(file='datasets/abalone.csv', header = FALSE)
+superconduct <- read.csv(file='datasets/superconduct.csv', header = FALSE)
 
 #########################
 
@@ -1435,7 +1477,6 @@ lessReg <- function(data = abalone) {
   # profvis::profvis({
   #
   # })
-
 
   # Now Selecting 70% of data as sample from total 'n' rows of the data
   set.seed(1)
