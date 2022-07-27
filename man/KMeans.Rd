@@ -23,8 +23,27 @@ km <- KMeans$new(n_clusters = 10, random_state = 100)
 ## Method `KMeans$fit`
 ## ------------------------------------------------
 
+data(abalone)
 km <- KMeans$new()
-km$fit(X)
+km$fit(abalone)
+
+## ------------------------------------------------
+## Method `KMeans$get_cluster_centers`
+## ------------------------------------------------
+
+data(abalone)
+km <- KMeans$new()
+km$fit(abalone)
+print(km$get_cluster_centers())
+
+## ------------------------------------------------
+## Method `KMeans$get_labels`
+## ------------------------------------------------
+
+data(abalone)
+km <- KMeans$new()
+km$fit(abalone)
+print(km$get_labels())
 }
 \seealso{
 \code{\link[stats:kmeans]{stats::kmeans()}}
@@ -105,8 +124,9 @@ Fitted R6 class of KMeans() that has 'cluster_centers' and 'labels' attributes
 }
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
-\preformatted{km <- KMeans$new()
-km$fit(X)
+\preformatted{data(abalone)
+km <- KMeans$new()
+km$fit(abalone)
 }
 \if{html}{\out{</div>}}
 
@@ -122,6 +142,17 @@ Auxiliary function returning the cluster centers
 \if{html}{\out{<div class="r">}}\preformatted{KMeans$get_cluster_centers()}\if{html}{\out{</div>}}
 }
 
+\subsection{Examples}{
+\if{html}{\out{<div class="r example copy">}}
+\preformatted{data(abalone)
+km <- KMeans$new()
+km$fit(abalone)
+print(km$get_cluster_centers())
+}
+\if{html}{\out{</div>}}
+
+}
+
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-KMeans-get_labels"></a>}}
@@ -130,6 +161,17 @@ Auxiliary function returning the cluster centers
 Auxiliary function returning a vector of integers (from 1:k) indicating the cluster to which each point is allocated.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{KMeans$get_labels()}\if{html}{\out{</div>}}
+}
+
+\subsection{Examples}{
+\if{html}{\out{<div class="r example copy">}}
+\preformatted{data(abalone)
+km <- KMeans$new()
+km$fit(abalone)
+print(km$get_labels())
+}
+\if{html}{\out{</div>}}
+
 }
 
 }

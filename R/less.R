@@ -122,8 +122,15 @@ LinearRegression <- R6::R6Class(classname = "LinearRegression",
                                   #' @return Fitted R6 Class of LinearRegression
                                   #'
                                   #' @examples
+                                  #' data(abalone)
+                                  #' split_list <- train_test_split(abalone, test_size =  0.3)
+                                  #' X_train <- split_list[[1]]
+                                  #' X_test <- split_list[[2]]
+                                  #' y_train <- split_list[[3]]
+                                  #' y_test <- split_list[[4]]
+                                  #'
                                   #' lr <- LinearRegression$new()
-                                  #' lr$fit(X, y)
+                                  #' lr$fit(X_train, y_train)
                                   fit = function(X, y) {
                                     df <- prepareDataset(X, y)
                                     private$model <- lm(y ~ ., data = df)
@@ -140,14 +147,22 @@ LinearRegression <- R6::R6Class(classname = "LinearRegression",
                                   #' @return The predict values.
                                   #'
                                   #' @examples
-                                  #' lr <- LinearRegression$new()
-                                  #' lr$fit(X, y)
-                                  #' preds <- lr$predict(X0)
+                                  #' data(abalone)
+                                  #' split_list <- train_test_split(abalone, test_size =  0.3)
+                                  #' X_train <- split_list[[1]]
+                                  #' X_test <- split_list[[2]]
+                                  #' y_train <- split_list[[3]]
+                                  #' y_test <- split_list[[4]]
                                   #'
                                   #' lr <- LinearRegression$new()
-                                  #' preds <- lr$fit(X, y)$predict(X0)
+                                  #' lr$fit(X_train, y_train)
+                                  #' preds <- lr$predict(X_test)
                                   #'
-                                  #' preds <- LinearRegression$new()$fit(X, y)$predict(X0)
+                                  #' lr <- LinearRegression$new()
+                                  #' preds <- lr$fit(X_train, y_train)$predict(X_test)
+                                  #'
+                                  #' preds <- LinearRegression$new()$fit(X_train, y_train)$predict(X_test)
+                                  #' print(head(matrix(c(y_test, preds), ncol = 2, dimnames = (list(NULL, c("True", "Prediction"))))))
                                   predict = function(X0) {
                                     data <- prepareXset(X0)
                                     suppressWarnings(predict(private$model, newdata = data))
@@ -212,8 +227,15 @@ DecisionTreeRegressor <- R6::R6Class(classname = "DecisionTreeRegressor",
                                        #' @return Fitted R6 Class of DecisionTreeRegressor
                                        #'
                                        #' @examples
+                                       #' data(abalone)
+                                       #' split_list <- train_test_split(abalone, test_size =  0.3)
+                                       #' X_train <- split_list[[1]]
+                                       #' X_test <- split_list[[2]]
+                                       #' y_train <- split_list[[3]]
+                                       #' y_test <- split_list[[4]]
+                                       #'
                                        #' dt <- DecisionTreeRegressor$new()
-                                       #' dt$fit(X, y)
+                                       #' dt$fit(X_train, y_train)
                                        fit = function(X, y) {
                                          df <- prepareDataset(X, y)
                                          private$model <- party::ctree(
@@ -230,14 +252,22 @@ DecisionTreeRegressor <- R6::R6Class(classname = "DecisionTreeRegressor",
                                        #' @return The predict values.
                                        #'
                                        #' @examples
-                                       #' dt <- DecisionTreeRegressor$new()
-                                       #' dt$fit(X, y)
-                                       #' preds <- dt$predict(X0)
+                                       #' data(abalone)
+                                       #' split_list <- train_test_split(abalone, test_size =  0.3)
+                                       #' X_train <- split_list[[1]]
+                                       #' X_test <- split_list[[2]]
+                                       #' y_train <- split_list[[3]]
+                                       #' y_test <- split_list[[4]]
                                        #'
                                        #' dt <- DecisionTreeRegressor$new()
-                                       #' preds <- dt$fit(X, y)$predict(X0)
+                                       #' dt$fit(X_train, y_train)
+                                       #' preds <- dt$predict(X_test)
                                        #'
-                                       #' preds <- DecisionTreeRegressor$new()$fit(X, y)$predict(X0)
+                                       #' dt <- DecisionTreeRegressor$new()
+                                       #' preds <- dt$fit(X_train, y_train)$predict(X_test)
+                                       #'
+                                       #' preds <- DecisionTreeRegressor$new()$fit(X_train, y_train)$predict(X_test)
+                                       #' print(head(matrix(c(y_test, preds), ncol = 2, dimnames = (list(NULL, c("True", "Prediction"))))))
                                        predict = function(X0) {
                                          data <- prepareXset(X0)
                                          predict(private$model, data)
@@ -355,7 +385,8 @@ KDTree <- R6::R6Class(classname = "KDTree",
                         #' @description Creates a new instance of R6 Class of KDTree
                         #'
                         #' @examples
-                        #' kdt <- KDTree$new(X)
+                        #' data(abalone)
+                        #' kdt <- KDTree$new(abalone)
                         initialize = function(X = NULL) {
                           private$X = X
                         },
@@ -370,6 +401,12 @@ KDTree <- R6::R6Class(classname = "KDTree",
                         #'    \tab \cr
                         #'    \code{nn.dists} \tab A \strong{N x k} matrix returning the near neighbour Euclidean distances \cr
                         #' }
+                        #'
+                        #' @examples
+                        #' data(abalone)
+                        #' kdt <- KDTree$new(abalone)
+                        #' res <- kdt$query(abalone[1:3,], k=2)
+                        #' print(res)
                         query = function(query_X = private$X, k=1){
                           # query the tree for the k nearest neighbors
                           query <- as.matrix(query_X)
@@ -421,8 +458,9 @@ KMeans <- R6::R6Class(classname = "KMeans",
                         #' @return Fitted R6 class of KMeans() that has 'cluster_centers' and 'labels' attributes
                         #'
                         #' @examples
+                        #' data(abalone)
                         #' km <- KMeans$new()
-                        #' km$fit(X)
+                        #' km$fit(abalone)
                         fit = function(X){
                           set.seed(private$random_state)
                           private$model <- kmeans(X, centers = private$n_clusters, iter.max = private$max_iter, nstart = private$n_init)
@@ -431,10 +469,20 @@ KMeans <- R6::R6Class(classname = "KMeans",
                           invisible(self)
                         },
                         #' @description Auxiliary function returning the cluster centers
+                        #' @examples
+                        #' data(abalone)
+                        #' km <- KMeans$new()
+                        #' km$fit(abalone)
+                        #' print(km$get_cluster_centers())
                         get_cluster_centers = function(){
                           return(private$cluster_centers)
                         },
                         #' @description Auxiliary function returning a vector of integers (from 1:k) indicating the cluster to which each point is allocated.
+                        #' @examples
+                        #' data(abalone)
+                        #' km <- KMeans$new()
+                        #' km$fit(abalone)
+                        #' print(km$get_labels())
                         get_labels = function(){
                           return(private$labels)
                         }
@@ -546,13 +594,26 @@ getClassName = function(obj) {
 #' @return A \code{list} of length 4 with elements:\tabular{ll}{
 #'    \code{X_train} \tab Training input variables  \cr
 #'    \tab \cr
-#'    \code{y_train} \tab Training response variables   \cr
-#'    \tab \cr
 #'    \code{X_test} \tab Test input variables \cr
+#'    \tab \cr
+#'    \code{y_train} \tab Training response variables   \cr
 #'    \tab \cr
 #'    \code{y_test} \tab Test response variables \cr
 #' }
 #' @export
+#'
+#' @examples
+#' data(abalone)
+#' split_list <- train_test_split(abalone, test_size =  0.3)
+#' X_train <- split_list[[1]]
+#' X_test <- split_list[[2]]
+#' y_train <- split_list[[3]]
+#' y_test <- split_list[[4]]
+#'
+#' print(head(X_train))
+#' print(head(X_test))
+#' print(head(y_train))
+#' print(head(y_test))
 train_test_split = function(data, test_size=0.3, random_state=NULL){
   if(!is.null(test_size)) {
     if(test_size <= 0.0 | test_size >= 1.0){
@@ -564,11 +625,11 @@ train_test_split = function(data, test_size=0.3, random_state=NULL){
   train <- data[sample, ]
   test  <- data[-sample, ]
 
-  X_train <- train[,-ncol(train)]
-  y_train <- train[,ncol(train)]
-  X_test <- test[,-ncol(test)]
-  y_test <- test[,ncol(test)]
-  return(list(X_train, X_test, y_train, y_test))
+  X_train <- as.matrix(train[,-ncol(train)])
+  X_test <- as.matrix(test[,-ncol(test)])
+  y_train <- as.matrix(train[,ncol(train)])
+  y_test <- as.matrix(test[,ncol(test)])
+  return(list(X_train = X_train, X_test = X_test, y_train = y_train, y_test = y_test))
 }
 
 # checks if the given estimator is fitted
@@ -1338,8 +1399,15 @@ LESSRegressor <- R6::R6Class(classname = "LESSRegressor",
                                #' @return Fitted R6 Class of LESSRegressor
                                #'
                                #' @examples
+                               #' data(abalone)
+                               #' split_list <- train_test_split(abalone, test_size =  0.3)
+                               #' X_train <- split_list[[1]]
+                               #' X_test <- split_list[[2]]
+                               #' y_train <- split_list[[3]]
+                               #' y_test <- split_list[[4]]
+                               #'
                                #' lessRegressor <- LESSRegressor$new()
-                               #' lessRegressor$fit(X, y)
+                               #' lessRegressor$fit(X_train, y_train)
                                fit = function(X, y){
 
                                  # Check that X and y have correct shape
@@ -1382,14 +1450,22 @@ LESSRegressor <- R6::R6Class(classname = "LESSRegressor",
                                #' @return Predicted values of the given predictors
                                #'
                                #' @examples
-                               #' lessRegressor <- LESSRegressor$new()
-                               #' lessRegressor$fit(X, y)
-                               #' preds <- lessRegressor$predict(X0)
+                               #' data(abalone)
+                               #' split_list <- train_test_split(abalone, test_size =  0.3)
+                               #' X_train <- split_list[[1]]
+                               #' X_test <- split_list[[2]]
+                               #' y_train <- split_list[[3]]
+                               #' y_test <- split_list[[4]]
                                #'
                                #' lessRegressor <- LESSRegressor$new()
-                               #' preds <- lessRegressor$fit(X, y)$predict(X0)
+                               #' lessRegressor$fit(X_train, y_train)
+                               #' preds <- lessRegressor$predict(X_test)
                                #'
-                               #' preds <- LESSRegressor$new()$fit(X, y)$predict(X0)
+                               #' lessRegressor <- LESSRegressor$new()
+                               #' preds <- lessRegressor$fit(X_train, y_train)$predict(X_test)
+                               #'
+                               #' preds <- LESSRegressor$new()$fit(X_train, y_train)$predict(X_test)
+                               #' print(head(matrix(c(y_test, preds), ncol = 2, dimnames = (list(NULL, c("True", "Prediction"))))))
                                predict = function(X0) {
 
                                  check_is_fitted(self)

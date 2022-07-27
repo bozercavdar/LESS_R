@@ -19,13 +19,26 @@ Pass an int for reproducible output across multiple function calls (defaults to 
 A \code{list} of length 4 with elements:\tabular{ll}{
 \code{X_train} \tab Training input variables  \cr
 \tab \cr
-\code{y_train} \tab Training response variables   \cr
-\tab \cr
 \code{X_test} \tab Test input variables \cr
+\tab \cr
+\code{y_train} \tab Training response variables   \cr
 \tab \cr
 \code{y_test} \tab Test response variables \cr
 }
 }
 \description{
 Split dataframes or matrices into random train and test subsets.
+}
+\examples{
+data(abalone)
+split_list <- train_test_split(abalone, test_size =  0.3)
+X_train <- split_list[[1]]
+X_test <- split_list[[2]]
+y_train <- split_list[[3]]
+y_test <- split_list[[4]]
+
+print(head(X_train))
+print(head(X_test))
+print(head(y_train))
+print(head(y_test))
 }

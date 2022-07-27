@@ -15,21 +15,36 @@ Wrapper R6 Class of party::ctree function that can be used for LESSRegressor and
 ## Method `DecisionTreeRegressor$fit`
 ## ------------------------------------------------
 
+data(abalone)
+split_list <- train_test_split(abalone, test_size =  0.3)
+X_train <- split_list[[1]]
+X_test <- split_list[[2]]
+y_train <- split_list[[3]]
+y_test <- split_list[[4]]
+
 dt <- DecisionTreeRegressor$new()
-dt$fit(X, y)
+dt$fit(X_train, y_train)
 
 ## ------------------------------------------------
 ## Method `DecisionTreeRegressor$predict`
 ## ------------------------------------------------
 
-dt <- DecisionTreeRegressor$new()
-dt$fit(X, y)
-preds <- dt$predict(X0)
+data(abalone)
+split_list <- train_test_split(abalone, test_size =  0.3)
+X_train <- split_list[[1]]
+X_test <- split_list[[2]]
+y_train <- split_list[[3]]
+y_test <- split_list[[4]]
 
 dt <- DecisionTreeRegressor$new()
-preds <- dt$fit(X, y)$predict(X0)
+dt$fit(X_train, y_train)
+preds <- dt$predict(X_test)
 
-preds <- DecisionTreeRegressor$new()$fit(X, y)$predict(X0)
+dt <- DecisionTreeRegressor$new()
+preds <- dt$fit(X_train, y_train)$predict(X_test)
+
+preds <- DecisionTreeRegressor$new()$fit(X_train, y_train)$predict(X_test)
+print(head(matrix(c(y_test, preds), ncol = 2, dimnames = (list(NULL, c("True", "Prediction"))))))
 }
 \seealso{
 \code{\link[party:ctree]{party::ctree()}}
@@ -79,8 +94,15 @@ Fitted R6 Class of DecisionTreeRegressor
 }
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
-\preformatted{dt <- DecisionTreeRegressor$new()
-dt$fit(X, y)
+\preformatted{data(abalone)
+split_list <- train_test_split(abalone, test_size =  0.3)
+X_train <- split_list[[1]]
+X_test <- split_list[[2]]
+y_train <- split_list[[3]]
+y_test <- split_list[[4]]
+
+dt <- DecisionTreeRegressor$new()
+dt$fit(X_train, y_train)
 }
 \if{html}{\out{</div>}}
 
@@ -108,14 +130,22 @@ The predict values.
 }
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
-\preformatted{dt <- DecisionTreeRegressor$new()
-dt$fit(X, y)
-preds <- dt$predict(X0)
+\preformatted{data(abalone)
+split_list <- train_test_split(abalone, test_size =  0.3)
+X_train <- split_list[[1]]
+X_test <- split_list[[2]]
+y_train <- split_list[[3]]
+y_test <- split_list[[4]]
 
 dt <- DecisionTreeRegressor$new()
-preds <- dt$fit(X, y)$predict(X0)
+dt$fit(X_train, y_train)
+preds <- dt$predict(X_test)
 
-preds <- DecisionTreeRegressor$new()$fit(X, y)$predict(X0)
+dt <- DecisionTreeRegressor$new()
+preds <- dt$fit(X_train, y_train)$predict(X_test)
+
+preds <- DecisionTreeRegressor$new()$fit(X_train, y_train)$predict(X_test)
+print(head(matrix(c(y_test, preds), ncol = 2, dimnames = (list(NULL, c("True", "Prediction"))))))
 }
 \if{html}{\out{</div>}}
 

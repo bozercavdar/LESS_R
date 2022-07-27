@@ -15,7 +15,17 @@ Wrapper R6 Class of RANN::nn2 function that can be used for LESSRegressor and LE
 ## Method `KDTree$new`
 ## ------------------------------------------------
 
-kdt <- KDTree$new(X)
+data(abalone)
+kdt <- KDTree$new(abalone)
+
+## ------------------------------------------------
+## Method `KDTree$query`
+## ------------------------------------------------
+
+data(abalone)
+kdt <- KDTree$new(abalone)
+res <- kdt$query(abalone[1:3,], k=2)
+print(res)
 }
 \seealso{
 \code{\link[RANN:nn2]{RANN::nn2()}}
@@ -46,7 +56,8 @@ Creates a new instance of R6 Class of KDTree
 }
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
-\preformatted{kdt <- KDTree$new(X)
+\preformatted{data(abalone)
+kdt <- KDTree$new(abalone)
 }
 \if{html}{\out{</div>}}
 
@@ -79,6 +90,17 @@ A \code{list} of length 2 with elements:\tabular{ll}{
 \code{nn.dists} \tab A \strong{N x k} matrix returning the near neighbour Euclidean distances \cr
 }
 }
+\subsection{Examples}{
+\if{html}{\out{<div class="r example copy">}}
+\preformatted{data(abalone)
+kdt <- KDTree$new(abalone)
+res <- kdt$query(abalone[1:3,], k=2)
+print(res)
+}
+\if{html}{\out{</div>}}
+
+}
+
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-KDTree-clone"></a>}}

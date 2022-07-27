@@ -15,21 +15,36 @@ Wrapper R6 Class of stats::lm function that can be used for LESSRegressor and LE
 ## Method `LinearRegression$fit`
 ## ------------------------------------------------
 
+data(abalone)
+split_list <- train_test_split(abalone, test_size =  0.3)
+X_train <- split_list[[1]]
+X_test <- split_list[[2]]
+y_train <- split_list[[3]]
+y_test <- split_list[[4]]
+
 lr <- LinearRegression$new()
-lr$fit(X, y)
+lr$fit(X_train, y_train)
 
 ## ------------------------------------------------
 ## Method `LinearRegression$predict`
 ## ------------------------------------------------
 
-lr <- LinearRegression$new()
-lr$fit(X, y)
-preds <- lr$predict(X0)
+data(abalone)
+split_list <- train_test_split(abalone, test_size =  0.3)
+X_train <- split_list[[1]]
+X_test <- split_list[[2]]
+y_train <- split_list[[3]]
+y_test <- split_list[[4]]
 
 lr <- LinearRegression$new()
-preds <- lr$fit(X, y)$predict(X0)
+lr$fit(X_train, y_train)
+preds <- lr$predict(X_test)
 
-preds <- LinearRegression$new()$fit(X, y)$predict(X0)
+lr <- LinearRegression$new()
+preds <- lr$fit(X_train, y_train)$predict(X_test)
+
+preds <- LinearRegression$new()$fit(X_train, y_train)$predict(X_test)
+print(head(matrix(c(y_test, preds), ncol = 2, dimnames = (list(NULL, c("True", "Prediction"))))))
 }
 \seealso{
 \code{\link[stats:lm]{stats::lm()}}
@@ -80,8 +95,15 @@ Fitted R6 Class of LinearRegression
 }
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
-\preformatted{lr <- LinearRegression$new()
-lr$fit(X, y)
+\preformatted{data(abalone)
+split_list <- train_test_split(abalone, test_size =  0.3)
+X_train <- split_list[[1]]
+X_test <- split_list[[2]]
+y_train <- split_list[[3]]
+y_test <- split_list[[4]]
+
+lr <- LinearRegression$new()
+lr$fit(X_train, y_train)
 }
 \if{html}{\out{</div>}}
 
@@ -109,14 +131,22 @@ The predict values.
 }
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
-\preformatted{lr <- LinearRegression$new()
-lr$fit(X, y)
-preds <- lr$predict(X0)
+\preformatted{data(abalone)
+split_list <- train_test_split(abalone, test_size =  0.3)
+X_train <- split_list[[1]]
+X_test <- split_list[[2]]
+y_train <- split_list[[3]]
+y_test <- split_list[[4]]
 
 lr <- LinearRegression$new()
-preds <- lr$fit(X, y)$predict(X0)
+lr$fit(X_train, y_train)
+preds <- lr$predict(X_test)
 
-preds <- LinearRegression$new()$fit(X, y)$predict(X0)
+lr <- LinearRegression$new()
+preds <- lr$fit(X_train, y_train)$predict(X_test)
+
+preds <- LinearRegression$new()$fit(X_train, y_train)$predict(X_test)
+print(head(matrix(c(y_test, preds), ncol = 2, dimnames = (list(NULL, c("True", "Prediction"))))))
 }
 \if{html}{\out{</div>}}
 
