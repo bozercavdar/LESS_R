@@ -20,3 +20,6 @@ Imports:
     rpart.plot,
     tree,
     wordspace
+Depends: 
+    R (>= 2.10)
+LazyData: true
