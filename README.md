@@ -6,5 +6,6 @@ LESS is a supervised learning algorithm that is based on training many local est
 
 ## Installation
 
-`library(devtools)`
-`install_github("bozercavdar/LESS_R")`
+-> `library(devtools)`
+
+-> `install_github("bozercavdar/LESS_R")`
