@@ -27,7 +27,8 @@ A \code{list} of length 4 with elements:\tabular{ll}{
 }
 }
 \description{
-Split dataframes or matrices into random train and test subsets.
+Split dataframes or matrices into random train and test subsets. Takes the last column of the input data as response variable \strong{(y)}
+and the rest as the independent variables \strong{(X)}
 }
 \examples{
 data(abalone)

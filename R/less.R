@@ -583,7 +583,8 @@ getClassName = function(obj) {
 
 #' @title Dataset splitting
 #'
-#' @description Split dataframes or matrices into random train and test subsets.
+#' @description Split dataframes or matrices into random train and test subsets. Takes the last column of the input data as response variable \strong{(y)}
+#' and the rest as the independent variables \strong{(X)}
 #'
 #' @param data Dataset that is going to be split
 #' @param test_size Represents the proportion of the dataset to include in the test split.
