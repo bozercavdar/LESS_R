@@ -4,7 +4,12 @@
 \alias{train_test_split}
 \title{Dataset splitting}
 \usage{
-train_test_split(data, test_size = 0.3, random_state = NULL)
+train_test_split(
+  data,
+  test_size = 0.3,
+  random_state = NULL,
+  y_index = ncol(data)
+)
 }
 \arguments{
 \item{data}{Dataset that is going to be split}
@@ -14,6 +19,8 @@ Should be between 0.0 and 1.0 (defaults to 0.3)}
 
 \item{random_state}{Controls the shuffling applied to the data before applying the split.
 Pass an int for reproducible output across multiple function calls (defaults to NULL)}
+
+\item{y_index}{Corresponding column index of the response variable \strong{y} (defaults to last column of \strong{data})}
 }
 \value{
 A \code{list} of length 4 with elements:\tabular{ll}{
@@ -27,7 +34,7 @@ A \code{list} of length 4 with elements:\tabular{ll}{
 }
 }
 \description{
-Split dataframes or matrices into random train and test subsets. Takes the last column of the input data as response variable \strong{(y)}
+Split dataframes or matrices into random train and test subsets. Takes the column at the \strong{y_index} of \strong{data} as response variable \strong{(y)}
 and the rest as the independent variables \strong{(X)}
 }
 \examples{

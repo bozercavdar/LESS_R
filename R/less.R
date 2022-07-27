@@ -583,7 +583,7 @@ getClassName = function(obj) {
 
 #' @title Dataset splitting
 #'
-#' @description Split dataframes or matrices into random train and test subsets. Takes the last column of the input data as response variable \strong{(y)}
+#' @description Split dataframes or matrices into random train and test subsets. Takes the column at the \strong{y_index} of \strong{data} as response variable \strong{(y)}
 #' and the rest as the independent variables \strong{(X)}
 #'
 #' @param data Dataset that is going to be split
@@ -591,6 +591,7 @@ getClassName = function(obj) {
 #' Should be between 0.0 and 1.0 (defaults to 0.3)
 #' @param random_state Controls the shuffling applied to the data before applying the split.
 #' Pass an int for reproducible output across multiple function calls (defaults to NULL)
+#' @param y_index Corresponding column index of the response variable \strong{y} (defaults to last column of \strong{data})
 #'
 #' @return A \code{list} of length 4 with elements:\tabular{ll}{
 #'    \code{X_train} \tab Training input variables  \cr
@@ -615,21 +616,28 @@ getClassName = function(obj) {
 #' print(head(X_test))
 #' print(head(y_train))
 #' print(head(y_test))
-train_test_split = function(data, test_size=0.3, random_state=NULL){
+train_test_split = function(data, test_size=0.3, random_state=NULL, y_index = ncol(data)){
   if(!is.null(test_size)) {
     if(test_size <= 0.0 | test_size >= 1.0){
       stop("\tParameter test_size should be in the interval (0, 1).")
     }
   }
+  if(y_index%%1!=0){
+    stop("\tParameter y_index should be an integer")
+  }
+  if(y_index < 1 | y_index > ncol(data)) {
+    stop("\tParameter y_index should be in the interval [1, ncol(data)]")
+  }
+
   set.seed(random_state)
   sample <- sample.int(n = nrow(data), size = floor((1-test_size)*nrow(data)), replace = F)
   train <- data[sample, ]
   test  <- data[-sample, ]
 
-  X_train <- as.matrix(train[,-ncol(train)])
-  X_test <- as.matrix(test[,-ncol(test)])
-  y_train <- as.matrix(train[,ncol(train)])
-  y_test <- as.matrix(test[,ncol(test)])
+  X_train <- as.matrix(train[,-y_index])
+  X_test <- as.matrix(test[,-y_index])
+  y_train <- as.matrix(train[,y_index])
+  y_test <- as.matrix(test[,y_index])
   return(list(X_train = X_train, X_test = X_test, y_train = y_train, y_test = y_test))
 }
 
