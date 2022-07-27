@@ -64,13 +64,11 @@ SklearnEstimator <- R6::R6Class(classname = "SklearnEstimator",
                                 public = list(
                                   #' @description Dummy fit function
                                   fit = function() {
-                                    # FIXME
-                                    print("dummy fit function")
-                                    invisible(self)
+                                    stop("Needs to implement fit(X, y)")
                                   },
                                   #' @description Dummy predict function
                                   predict = function(){
-                                    print("dummy predict function")
+                                    stop("Needs to implement predict(X, y)")
                                     invisible(self)
                                   },
                                   #' @description Auxiliary function returning the type of the class e.g 'estimator'
