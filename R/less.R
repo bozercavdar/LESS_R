@@ -677,17 +677,14 @@ check_matrix = function(matrix){
     stop(sprintf("\tThe input '%s' is expected to be a 2D matrix or dataframe, got a %s", matrix_name, class(matrix)))
   }
 
-  if(!is.numeric(as.matrix(matrix))){
-    stop(sprintf("\tThe input '%s' is expected to be a numeric", matrix_name))
+  dirty_indices <- apply(matrix, 2, function(x) is.na(x) | is.infinite(x) | is.nan(x))
+  is_dirty <- Reduce('|', dirty_indices)
+  if(is_dirty){
+    stop("\t Values in X cannot be infinite, NaN or NA")
   }
 
-  matrix <- as.matrix(matrix) #if the input is a data frame, it gives an error in is.infinite
-  infIndices <- is.infinite(matrix)
-  nanIndices <- is.nan(matrix)
-  is_infite <- Reduce('|', infIndices)
-  is_nan <- Reduce('|', nanIndices)
-  if(is_infite | is_nan){
-    stop("\t Values in X cannot be infinite or NaN")
+  if(!is.numeric(as.matrix(matrix))){
+    stop(sprintf("\tThe input '%s' is expected to be a numeric", matrix_name))
   }
 }
 
@@ -705,18 +702,16 @@ check_y = function(y) {
     }
   }
 
+  dirty_indices <- apply(as.matrix(y), 2, function(x) is.na(x) | is.infinite(x) | is.nan(x))
+  is_dirty <- Reduce('|', dirty_indices)
+  if(is_dirty){
+    stop("\t Values in y cannot be infinite, NaN or NA")
+  }
+
   if(!is.numeric(as.matrix(y))){
     stop(sprintf("\tThe input '%s' is expected to be a numeric", y_name))
   }
 
-  y <- as.matrix(y) #if the input is a data frame, it gives an error in is.infinite
-  infIndices <- is.infinite(y)
-  nanIndices <- is.nan(y)
-  is_infite <- Reduce('|', infIndices)
-  is_nan <- Reduce('|', nanIndices)
-  if(is_infite | is_nan){
-    stop("\t Values in y cannot be infinite or NaN")
-  }
   return(as.matrix(y))
 }
 
@@ -1548,6 +1543,9 @@ LESSRegressor <- R6::R6Class(classname = "LESSRegressor",
 
 abalone <- read.csv(file='datasets/abalone.csv', header = FALSE)
 superconduct <- read.csv(file='datasets/superconduct.csv', header = FALSE)
+breast <- read.csv('C:/Users/ozerc/Desktop/breast-cancer-wisconsin.csv', header=FALSE, dec=",")
+breast[,1] <- NULL
+breast <- as.data.frame(sapply(breast, as.numeric))
 
 #########################
 
@@ -1557,7 +1555,7 @@ superconduct <- read.csv(file='datasets/superconduct.csv', header = FALSE)
 #' @param data
 #'
 #' @export
-lessReg <- function(data = abalone) {
+lessReg <- function(data = breast) {
   # UNCOMMENT THIS CODE BLOCK TO PROFILE THE CODE AND SEE A PERFORMANCE ANALYSIS OF THE CODE
   # profvis::profvis({
   #
@@ -1569,15 +1567,18 @@ lessReg <- function(data = abalone) {
   train <- data[sample, ]
   test  <- data[-sample, ]
 
-  X_train <- train[,-ncol(train)]
-  y_train <- train[,ncol(train)]
-  X_test <- test[,-ncol(test)]
-  y_test <- test[,ncol(test)]
-
-  # X_train <- as.matrix(train[,1])
+  # X_train <- train[,-ncol(train)]
   # y_train <- train[,ncol(train)]
-  # X_test <- as.matrix(test[,1])
+  # X_test <- test[,-ncol(test)]
   # y_test <- test[,ncol(test)]
+
+  y_index = 1
+  X_train <- as.matrix(data[1:400,-y_index])
+  y_train <- data[1:400,y_index]
+  X_test <- as.matrix(data[401:nrow(data),-y_index])
+  y_test <- data[401:nrow(data),y_index]
+
+  print(head(X_train))
 
   # dt <- LinearRegression$new()
   # preds <- dt$fit(X_train, y_train)$predict(X_test)
@@ -1586,7 +1587,7 @@ lessReg <- function(data = abalone) {
   # cat("MAPE: ", mape, "\n")
 
   cat("Total number of training samples: ", nrow(X_train), "\n")
-  LESS <- LESSRegressor$new(val_size = 0.3)
+  LESS <- LESSRegressor$new(cluster_method = KMeans$new())
   preds <- LESS$fit(X_train, y_train)$predict(X_test)
   print(LESS)
   print(head(matrix(c(y_test, preds), ncol = 2)))
