@@ -303,8 +303,11 @@ StandardScaler <- R6::R6Class(classname = "StandardScaler",
                                   # using z = (x - u) / s formula
                                   merged <- apply(merged, 2, function(x) (x - x[1]) / x[2] )
                                   #return the standardized version of original X matrix, extract the mean and stdev rows (first 2 cols)
-                                  return(as.matrix(merged[3:nrow(merged),]))
-                                },
+                                  if(nrow(merged) > 3){
+                                    return(as.matrix(merged[3:nrow(merged),]))
+                                  }else if(nrow(merged) == 3){
+                                    return(t(matrix(merged[3:nrow(merged),])))
+                                  }                                },
                                 fit_transform = function(X) {
                                   self$fit(X)$transform(X)
                                 },
@@ -532,7 +535,11 @@ prepareDataset = function(X, y) {
   if(!is.vector(merged_data[,-1])){
     ncolumns <- ncol(merged_data[,-1])
   }else{
-    ncolumns <- 1
+    if(length(y) == 1){ # this means X includes 1 row
+      ncolumns <- length(merged_data[,-1])
+    }else{ # this means x has only 1 feature
+      ncolumns <- 1
+    }
   }
   for(i in 1:ncolumns){
     colX <- append(colX, paste(c("X", i), collapse = "_"))
@@ -1477,7 +1484,7 @@ LESSRegressor <- R6::R6Class(classname = "LESSRegressor",
                                  check_matrix(X0)
 
                                  if(private$scaling){
-                                   X0 <- private$scobject$fit_transform(X0)
+                                   X0 <- private$scobject$transform(X0)
                                  }
 
                                  if(is.matrix(X0) | is.data.frame(X0) | is.array(X0)){
@@ -1555,7 +1562,7 @@ breast <- as.data.frame(sapply(breast, as.numeric))
 #' @param data
 #'
 #' @export
-lessReg <- function(data = breast) {
+lessReg <- function(data = abalone) {
   # UNCOMMENT THIS CODE BLOCK TO PROFILE THE CODE AND SEE A PERFORMANCE ANALYSIS OF THE CODE
   # profvis::profvis({
   #
@@ -1577,8 +1584,6 @@ lessReg <- function(data = breast) {
   y_train <- data[1:400,y_index]
   X_test <- as.matrix(data[401:nrow(data),-y_index])
   y_test <- data[401:nrow(data),y_index]
-
-  print(head(X_train))
 
   # dt <- LinearRegression$new()
   # preds <- dt$fit(X_train, y_train)$predict(X_test)
