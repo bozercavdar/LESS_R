@@ -123,7 +123,7 @@ Creates a new instance of R6 Class of LESSRegressor
 
 \item{\code{n_subsets}}{number of subsets (default is NULL)}
 
-\item{\code{n_replications}}{number of replications (default is 50)}
+\item{\code{n_replications}}{number of replications (default is 20)}
 
 \item{\code{d_normalize}}{distance normalization (default is TRUE)}
 

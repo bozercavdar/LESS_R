@@ -1332,7 +1332,7 @@ LESSBase <- R6::R6Class(classname = "LESSBase",
 #' @param frac fraction of total samples used for the number of neighbors (default is 0.05)
 #' @param n_neighbors number of neighbors (default is NULL)
 #' @param n_subsets number of subsets (default is NULL)
-#' @param n_replications number of replications (default is 50)
+#' @param n_replications number of replications (default is 20)
 #' @param d_normalize distance normalization (default is TRUE)
 #' @param val_size percentage of samples used for validation (default is NULL - no validation)
 #' @param random_state initialization of the random seed (default is NULL)
