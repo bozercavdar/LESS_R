@@ -9,3 +9,7 @@ LESS is a supervised learning algorithm that is based on training many local est
 -> `library(devtools)`
 
 -> `install_github("bozercavdar/LESS_R")`
+
+## Tutorials
+
+You can see the [tutorial on Google Colab](https://colab.research.google.com/drive/1VjjYWlqVfJ7yWnHVL8bMSNfGORaHScRX?usp=sharing)
