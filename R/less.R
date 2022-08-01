@@ -1550,9 +1550,6 @@ LESSRegressor <- R6::R6Class(classname = "LESSRegressor",
 
 abalone <- read.csv(file='datasets/abalone.csv', header = FALSE)
 superconduct <- read.csv(file='datasets/superconduct.csv', header = FALSE)
-breast <- read.csv('C:/Users/ozerc/Desktop/breast-cancer-wisconsin.csv', header=FALSE, dec=",")
-breast[,1] <- NULL
-breast <- as.data.frame(sapply(breast, as.numeric))
 
 #########################
 
