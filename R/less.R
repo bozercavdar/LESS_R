@@ -307,7 +307,8 @@ StandardScaler <- R6::R6Class(classname = "StandardScaler",
                                     return(as.matrix(merged[3:nrow(merged),]))
                                   }else if(nrow(merged) == 3){
                                     return(t(matrix(merged[3:nrow(merged),])))
-                                  }                                },
+                                  }
+                                },
                                 fit_transform = function(X) {
                                   self$fit(X)$transform(X)
                                 },
@@ -672,7 +673,7 @@ check_is_fitted = function(estimator){
 check_matrix = function(matrix){
   is.scalar <- function(x) is.atomic(x) && length(x) == 1L
   matrix_name <- deparse(substitute(matrix))
-  if(is.scalar(matrix)){
+  if(is.scalar(matrix) & !is.matrix(matrix) & !is.data.frame(matrix)){
     stop(sprintf("\tThe input '%s' is expected to be a 2D matrix or dataframe, got a scalar instead.
                  \tYour data must be (n,1) dimensional if your data has a single feature or
                  \t(1, n) dimensional  if it contains a single sample.", matrix_name))
@@ -699,13 +700,13 @@ check_matrix = function(matrix){
 check_y = function(y) {
   is.scalar <- function(x) is.atomic(x) && length(x) == 1L
   y_name <- deparse(substitute(y))
-  if(is.scalar(matrix)){
+  if(is.scalar(y) & !is.matrix(y) & !is.data.frame(y)){
     stop(sprintf("\tThe input '%s' is expected to be a 1D vector or (n,1) dimensional matrix/dataframe, got a scalar instead.", y_name))
   }else if(!is.matrix(y) & !is.data.frame(y) & !is.vector(y)){
     stop(sprintf("\tThe input '%s' is expected to be a 1D vector or (n,1) dimensional matrix/dataframe, got a %s", y_name, class(y)))
-  }else if(!is.vector(y)){
+  }else if(is.matrix(y) | is.data.frame(y)){
     if(ncol(y)>1){
-      stop(sprintf("\tThe input '%s' is expected to be a 1D vector or (n,1) dimensional matrix/dataframe, got a (n,m) dimensional matrix/dataframe", y_name))
+      stop(sprintf("\tThe input '%s' is expected to be a 1D vector or (n,1) dimensional matrix/dataframe, got a (n,%s) dimensional matrix/dataframe", y_name, ncol(y)))
     }
   }
 
@@ -732,6 +733,7 @@ check_X_y = function(X, y){
   if(nrow(X) != nrow(y)){
     stop(sprintf("Found input variables with inconsistent numbers of samples:\n\tX: %s\n\ty: %s", nrow(X), nrow(y)))
   }
+  return(list(X, y))
 }
 
 
@@ -779,13 +781,13 @@ LESSBase <- R6::R6Class(classname = "LESSBase",
                           }
 
                           if(!is.null(private$frac)) {
-                            if(private$frac <= 0.0 | private$frac >= 1.0){
+                            if(private$frac <= 0.0 | private$frac > 1.0){
                               stop("\tParameter frac should be in the interval (0, 1).")
                             }
                           }
 
                           if(private$n_replications < 1){
-                            stop("\tThe number of replications should greater than equal to one.")
+                            stop("\tThe number of replications should be greater than or equal to one.")
                           }
 
                           if(length(private$cluster_method) != 0){ #length of NULL is zero. if it is not a null environment(class), length is not zero
@@ -864,9 +866,6 @@ LESSBase <- R6::R6Class(classname = "LESSBase",
                               }
                             }
                           }
-                          else{
-                            private$n_subsets <- list()
-                          }
                         },
 
                         fitnoval = function(X, y) {
@@ -910,7 +909,7 @@ LESSBase <- R6::R6Class(classname = "LESSBase",
                               }
                             }
 
-
+                            # Normalize the distances from samples to the local subsets
                             if(private$d_normalize) {
                               denom <- rowSums(dists)
                               denom[denom < 1e-08] <- 1e-08
@@ -1003,7 +1002,7 @@ LESSBase <- R6::R6Class(classname = "LESSBase",
                               }
                             }
 
-
+                            # Normalize the distances from samples to the local subsets
                             if(private$d_normalize) {
                               denom <- rowSums(dists)
                               denom[denom < 1e-08] <- 1e-08
@@ -1115,6 +1114,7 @@ LESSBase <- R6::R6Class(classname = "LESSBase",
                               }
                             }
 
+                            # Normalize the distances from samples to the local subsets
                             if(private$d_normalize) {
                               denom <- rowSums(dists)
                               denom[denom < 1e-08] <- 1e-08
@@ -1422,7 +1422,9 @@ LESSRegressor <- R6::R6Class(classname = "LESSRegressor",
                                fit = function(X, y){
 
                                  # Check that X and y have correct shape
-                                 check_X_y(X, y)
+                                 X_y_list <- check_X_y(X, y)
+                                 X <- X_y_list[[1]]
+                                 y <- X_y_list[[2]]
                                  private$set_local_attributes()
 
                                  if(private$scaling){
@@ -1430,9 +1432,8 @@ LESSRegressor <- R6::R6Class(classname = "LESSRegressor",
                                    X <- private$scobject$fit_transform(X)
                                  }
 
-
                                  if(!is.null(private$val_size)){
-                                   # Validation set is not used for global estimation
+                                   # Validation set is used for global estimation
                                    if(length(private$cluster_method) == 0){
                                      private$fitval(X, y)
                                    }
@@ -1441,7 +1442,7 @@ LESSRegressor <- R6::R6Class(classname = "LESSRegressor",
                                    }
                                  }
                                  else{
-                                   # Validation set  not used for global estimation
+                                   # Validation set is not used for global estimation
                                    if(length(private$cluster_method) == 0){
                                      private$fitnoval(X, y)
                                    }
@@ -1487,21 +1488,14 @@ LESSRegressor <- R6::R6Class(classname = "LESSRegressor",
                                    X0 <- private$scobject$transform(X0)
                                  }
 
-                                 if(is.matrix(X0) | is.data.frame(X0) | is.array(X0)){
-                                   len_X0 <- nrow(X0)
-                                 }else if(is.vector(X0)){
-                                   len_X0 <- length(X0)
-                                 }else{
-                                   stop("\tinput X0 data is not one of the followings: matrix, dataframe, array, vector")
-                                 }
-
+                                 len_X0 <- nrow(X0)
                                  yhat <- matrix(0, len_X0, 1)
+
                                  for (i in 1:private$n_replications) {
                                    # Get the fitted global and local estimators
                                    global_model <- private$replications[[i]]$global_estimator
                                    local_models <- private$replications[[i]]$local_estimators
 
-                                   n_subsets <- NULL
                                    if(length(private$cluster_method) == 0){
                                      n_subsets <- private$n_subsets
                                    }else{
@@ -1513,7 +1507,7 @@ LESSRegressor <- R6::R6Class(classname = "LESSRegressor",
                                    for(j in 1:n_subsets){
                                      local_center <- local_models[[j]]$center
                                      local_model <- local_models[[j]]$estimator
-                                     predicts[,j] <- local_model$predict(X0)
+                                     predicts[, j] <- local_model$predict(X0)
 
                                      if(is.null(c(private$distance_function))) {
                                        dists[, j] <- rbf(X0, local_center, 1.0/(n_subsets ^ 2.0))
@@ -1542,6 +1536,7 @@ LESSRegressor <- R6::R6Class(classname = "LESSRegressor",
                                  }
 
                                  yhat <- yhat/private$n_replications
+
                                  return(yhat)
                                }
                              ))
