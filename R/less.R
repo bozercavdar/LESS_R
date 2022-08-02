@@ -737,6 +737,42 @@ check_X_y = function(X, y){
 }
 
 
+synthetic_sine_curve = function() {
+  xvals <- seq(-10,10,length.out=201)[-201]
+  # plot(xvals, 10*sin(xvals), type = "l", col="red", ylab="",yaxt="n", xlab="",xaxt="n")
+  # par(new=TRUE)
+
+  X <- rep(0, 200)
+  y <- rep(0, 200)
+  for(i in 1:200){
+    xran <- -10 + 20*runif(1)
+    X[i] <- xran
+    y[i] <- 10*sin(xran) + 2.5*rnorm(1)
+  }
+  # plot(X, y, pch = 19, col="blue",  ylab="",yaxt="n", xlab="",xaxt="n")
+
+  return(list(X, y))
+}
+
+comparison_plot = function(X, y, model_list){
+  color_list <- colors()[sample.int(length(colors()), length(model_list))]
+  color_index <- 1
+  model_names <- list("True")
+  plot(X, y, pch = 19, col=color_list[color_index], ylab="",yaxt="n", xlab="",xaxt="n")
+  par(new=TRUE)
+  for (model in model_list) {
+    color_index <- color_index + 1
+    model_names <- append(model_names, getClassName(model))
+    y_pred <- model$fit(X, y)$predict(X)
+    plot(X, y_pred, pch = 19, col=color_list[color_index],  ylab="",yaxt="n", xlab="",xaxt="n")
+    par(new=TRUE)
+  }
+  legend("topleft", legend=model_names,
+         col=color_list, lty=1:2, cex=0.8)
+  par(new=FALSE)
+}
+
+
 ###################
 
 #' @title LESSBase
@@ -1543,8 +1579,10 @@ LESSRegressor <- R6::R6Class(classname = "LESSRegressor",
 
 ###########################
 
-abalone <- read.csv(file='datasets/abalone.csv', header = FALSE)
-superconduct <- read.csv(file='datasets/superconduct.csv', header = FALSE)
+sine_data_list <- synthetic_sine_curve()
+X_sine <- sine_data_list[[1]]
+y_sine <- sine_data_list[[2]]
+synthetic_sine_data <- cbind(X_sine, y_sine)
 
 #########################
 
@@ -1561,21 +1599,17 @@ lessReg <- function(data = abalone) {
   # })
 
   # Now Selecting 70% of data as sample from total 'n' rows of the data
-  set.seed(1)
-  sample <- sample.int(n = nrow(data), size = floor(.7*nrow(data)), replace = F)
-  train <- data[sample, ]
-  test  <- data[-sample, ]
+  split_list <- train_test_split(data, test_size =  0.3, random_state = 1)
+  X_train <- split_list[[1]]
+  X_test <- split_list[[2]]
+  y_train <- split_list[[3]]
+  y_test <- split_list[[4]]
 
-  # X_train <- train[,-ncol(train)]
-  # y_train <- train[,ncol(train)]
-  # X_test <- test[,-ncol(test)]
-  # y_test <- test[,ncol(test)]
-
-  y_index = 1
-  X_train <- as.matrix(data[1:400,-y_index])
-  y_train <- data[1:400,y_index]
-  X_test <- as.matrix(data[401:nrow(data),-y_index])
-  y_test <- data[401:nrow(data),y_index]
+  # y_index = 1
+  # X_train <- as.matrix(data[1:400,-y_index])
+  # y_train <- data[1:400,y_index]
+  # X_test <- as.matrix(data[401:nrow(data),-y_index])
+  # y_test <- data[401:nrow(data),y_index]
 
   # dt <- LinearRegression$new()
   # preds <- dt$fit(X_train, y_train)$predict(X_test)
@@ -1583,8 +1617,11 @@ lessReg <- function(data = abalone) {
   # mape <- MLmetrics::MAPE(preds, y_test)
   # cat("MAPE: ", mape, "\n")
 
+  # model_list <- c(LESSRegressor$new(), LinearRegression$new(), DecisionTreeRegressor$new())
+  # comparison_plot(X_train, y_train, model_list)
+
   cat("Total number of training samples: ", nrow(X_train), "\n")
-  LESS <- LESSRegressor$new(cluster_method = KMeans$new())
+  LESS <- LESSRegressor$new()
   preds <- LESS$fit(X_train, y_train)$predict(X_test)
   print(LESS)
   print(head(matrix(c(y_test, preds), ncol = 2)))
