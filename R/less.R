@@ -219,7 +219,7 @@ DecisionTreeRegressor <- R6::R6Class(classname = "DecisionTreeRegressor",
                                        model = NULL
                                      ),
                                      public = list(
-                                       #' @description Build a decision tree regressor from the training set (X, y).
+                                       #' @description Builds a decision tree regressor from the training set (X, y).
                                        #'
                                        #' @param X 2D matrix or dataframe that includes predictors
                                        #' @param y 1D vector or (n,1) dimensional matrix/dataframe that includes response variables
@@ -245,7 +245,7 @@ DecisionTreeRegressor <- R6::R6Class(classname = "DecisionTreeRegressor",
                                          # plot(private$model)
                                          invisible(self)
                                        },
-                                       #' @description Predict regression value for X.
+                                       #' @description Predict regression value for X0.
                                        #'
                                        #' @param X0 2D matrix or dataframe that includes predictors
                                        #'
@@ -278,6 +278,104 @@ DecisionTreeRegressor <- R6::R6Class(classname = "DecisionTreeRegressor",
                                        }
                                      )
                                      )
+
+#' @title RandomForestRegressor
+#'
+#' @description Wrapper R6 Class of randomForest::randomForest function that can be used for LESSRegressor and LESSClassifier
+#'
+#' @param n_estimators Number of trees to grow. This should not be set to too small a number,
+#' to ensure that every input row gets predicted at least a few times (defaults to 100).
+#' @param random_state Seed number to be used for fixing the randomness (default to NULL).
+#' @param min_samples_leaf Minimum size of terminal nodes. Setting this number larger causes smaller trees to be grown
+#' (and thus take less time) (defaults to 1)
+#' @param max_leaf_nodes Maximum number of terminal nodes trees in the forest can have.
+#' If not given, trees are grown to the maximum possible (subject to limits by nodesize).
+#' If set larger than maximum possible, a warning is issued. (defaults to NULL)
+#'
+#' @return R6 Class of RandomForestRegressor
+#' @seealso [randomForest::randomForest()]
+#' @export
+RandomForestRegressor <- R6::R6Class(classname = "RandomForestRegressor",
+                                     inherit = SklearnEstimator,
+                                     private = list(
+                                       estimator_type = "regressor",
+                                       model = NULL,
+                                       n_estimators = NULL,
+                                       random_state = NULL,
+                                       min_samples_leaf = NULL,
+                                       max_leaf_nodes = NULL
+                                     ),
+                                     public = list(
+                                       #' @description Creates a new instance of R6 Class of RandomForestRegressor
+                                       #'
+                                       #' @examples
+                                       #' rf <- RandomForestRegressor$new()
+                                       #' rf <- RandomForestRegressor$new(n_estimators = 500)
+                                       #' rf <- RandomForestRegressor$new(n_estimators = 500, random_state = 100)
+                                       initialize = function(n_estimators = 100, random_state = NULL, min_samples_leaf = 1,
+                                                             max_leaf_nodes = NULL){
+                                         private$n_estimators = n_estimators
+                                         private$random_state = random_state
+                                         private$min_samples_leaf = min_samples_leaf
+                                         private$max_leaf_nodes = max_leaf_nodes
+                                       },
+                                       #' @description Builds a random forest regressor from the training set (X, y).
+                                       #'
+                                       #' @param X 2D matrix or dataframe that includes predictors
+                                       #' @param y 1D vector or (n,1) dimensional matrix/dataframe that includes response variables
+                                       #'
+                                       #' @return Fitted R6 Class of RandomForestRegressor
+                                       #'
+                                       #' @examples
+                                       #' data(abalone)
+                                       #' split_list <- train_test_split(abalone, test_size =  0.3)
+                                       #' X_train <- split_list[[1]]
+                                       #' X_test <- split_list[[2]]
+                                       #' y_train <- split_list[[3]]
+                                       #' y_test <- split_list[[4]]
+                                       #'
+                                       #' rf <- RandomForestRegressor$new()
+                                       #' rf$fit(X_train, y_train)
+                                       fit = function(X, y){
+                                         df <- prepareDataset(X, y)
+                                         set.seed(private$random_state)
+                                         private$model <- randomForest::randomForest(y ~ ., data = df, type = "regression", ntree = private$n_estimators,
+                                                                                     nodesize = private$min_samples_leaf,
+                                                                                     maxnodes = private$max_leaf_nodes)
+                                         invisible(self)
+                                       },
+                                       #' @description Predict regression value for X0.
+                                       #'
+                                       #' @param X0 2D matrix or dataframe that includes predictors
+                                       #'
+                                       #' @return The predict values.
+                                       #'
+                                       #' @examples
+                                       #' data(abalone)
+                                       #' split_list <- train_test_split(abalone, test_size =  0.3)
+                                       #' X_train <- split_list[[1]]
+                                       #' X_test <- split_list[[2]]
+                                       #' y_train <- split_list[[3]]
+                                       #' y_test <- split_list[[4]]
+                                       #'
+                                       #' rf <- RandomForestRegressor$new()
+                                       #' rf$fit(X_train, y_train)
+                                       #' preds <- rf$predict(X_test)
+                                       #'
+                                       #' rf <- RandomForestRegressor$new()
+                                       #' preds <- rf$fit(X_train, y_train)$predict(X_test)
+                                       #'
+                                       #' preds <- RandomForestRegressor$new()$fit(X_train, y_train)$predict(X_test)
+                                       #' print(head(matrix(c(y_test, preds), ncol = 2, dimnames = (list(NULL, c("True", "Prediction"))))))
+                                       predict = function(X0){
+                                         data <- prepareXset(X0)
+                                         predict(private$model, data)
+                                       },
+                                       #' @description Auxiliary function returning the estimator type e.g 'regressor', 'classifier'
+                                       get_estimator_type = function() {
+                                         return(private$estimator_type)
+                                       }
+                                     ))
 
 StandardScaler <- R6::R6Class(classname = "StandardScaler",
                               private = list(
@@ -491,6 +589,7 @@ KMeans <- R6::R6Class(classname = "KMeans",
                           return(private$labels)
                         }
                       ))
+
 
 ####################
 # HELPER FUNCTIONS
@@ -1627,6 +1726,15 @@ lessReg <- function(data = abalone) {
   print(head(matrix(c(y_test, preds), ncol = 2)))
   mape <- MLmetrics::MAPE(preds, y_test)
   cat("MAPE: ", mape, "\n")
+
+  cat("Total number of training samples: ", nrow(X_train), "\n")
+  LESS <- LESSRegressor$new(global_estimator = RandomForestRegressor$new())
+  preds <- LESS$fit(X_train, y_train)$predict(X_test)
+  print(LESS)
+  print(head(matrix(c(y_test, preds), ncol = 2)))
+  mape <- MLmetrics::MAPE(preds, y_test)
+  cat("MAPE: ", mape, "\n")
+
 
   # UNCOMMENT THIS CODE BLOCK TO SEE ERROR COMPARISON BETWEEN DIFFERENT ESTIMATORS
   # models <- list(LESSRegressor$new(),

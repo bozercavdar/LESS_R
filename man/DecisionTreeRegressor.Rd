@@ -75,7 +75,7 @@ print(head(matrix(c(y_test, preds), ncol = 2, dimnames = (list(NULL, c("True", "
 \if{html}{\out{<a id="method-DecisionTreeRegressor-fit"></a>}}
 \if{latex}{\out{\hypertarget{method-DecisionTreeRegressor-fit}{}}}
 \subsection{Method \code{fit()}}{
-Build a decision tree regressor from the training set (X, y).
+Builds a decision tree regressor from the training set (X, y).
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{DecisionTreeRegressor$fit(X, y)}\if{html}{\out{</div>}}
 }
@@ -113,7 +113,7 @@ dt$fit(X_train, y_train)
 \if{html}{\out{<a id="method-DecisionTreeRegressor-predict"></a>}}
 \if{latex}{\out{\hypertarget{method-DecisionTreeRegressor-predict}{}}}
 \subsection{Method \code{predict()}}{
-Predict regression value for X.
+Predict regression value for X0.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{DecisionTreeRegressor$predict(X0)}\if{html}{\out{</div>}}
 }

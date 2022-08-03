@@ -15,6 +15,7 @@ Imports:
     party,
     profvis,
     R6,
+    randomForest,
     RANN,
     rpart,
     rpart.plot,
