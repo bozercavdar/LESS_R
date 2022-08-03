@@ -18,7 +18,7 @@ Regressor for Learning with Subset Selection (LESS)
 lessRegressor <- LESSRegressor$new()
 lessRegressor <- LESSRegressor$new(val_size = 0.3)
 lessRegressor <- LESSRegressor$new(cluster_method = less::KMeans$new())
-lessRegressor <- LESSRegressor$new(val_size = 0.3)
+lessRegressor <- LESSRegressor$new(val_size = 0.3, cluster_method = less::KMeans$new())
 
 ## ------------------------------------------------
 ## Method `LESSRegressor$fit`
@@ -37,13 +37,6 @@ lessRegressor$fit(X_train, y_train)
 ## ------------------------------------------------
 ## Method `LESSRegressor$predict`
 ## ------------------------------------------------
-
-data(abalone)
-split_list <- train_test_split(abalone, test_size =  0.3)
-X_train <- split_list[[1]]
-X_test <- split_list[[2]]
-y_train <- split_list[[3]]
-y_test <- split_list[[4]]
 
 lessRegressor <- LESSRegressor$new()
 lessRegressor$fit(X_train, y_train)
@@ -153,7 +146,7 @@ e.g., df(subset, sample) which returns a vector of distances (default is RBF(sub
 \preformatted{lessRegressor <- LESSRegressor$new()
 lessRegressor <- LESSRegressor$new(val_size = 0.3)
 lessRegressor <- LESSRegressor$new(cluster_method = less::KMeans$new())
-lessRegressor <- LESSRegressor$new(val_size = 0.3)
+lessRegressor <- LESSRegressor$new(val_size = 0.3, cluster_method = less::KMeans$new())
 }
 \if{html}{\out{</div>}}
 
@@ -226,14 +219,7 @@ Predicted values of the given predictors
 }
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
-\preformatted{data(abalone)
-split_list <- train_test_split(abalone, test_size =  0.3)
-X_train <- split_list[[1]]
-X_test <- split_list[[2]]
-y_train <- split_list[[3]]
-y_test <- split_list[[4]]
-
-lessRegressor <- LESSRegressor$new()
+\preformatted{lessRegressor <- LESSRegressor$new()
 lessRegressor$fit(X_train, y_train)
 preds <- lessRegressor$predict(X_test)
 

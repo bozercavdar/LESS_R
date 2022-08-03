@@ -37,13 +37,6 @@ rf$fit(X_train, y_train)
 ## Method `RandomForestRegressor$predict`
 ## ------------------------------------------------
 
-data(abalone)
-split_list <- train_test_split(abalone, test_size =  0.3)
-X_train <- split_list[[1]]
-X_test <- split_list[[2]]
-y_train <- split_list[[3]]
-y_test <- split_list[[4]]
-
 rf <- RandomForestRegressor$new()
 rf$fit(X_train, y_train)
 preds <- rf$predict(X_test)
@@ -181,14 +174,7 @@ The predict values.
 }
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
-\preformatted{data(abalone)
-split_list <- train_test_split(abalone, test_size =  0.3)
-X_train <- split_list[[1]]
-X_test <- split_list[[2]]
-y_train <- split_list[[3]]
-y_test <- split_list[[4]]
-
-rf <- RandomForestRegressor$new()
+\preformatted{rf <- RandomForestRegressor$new()
 rf$fit(X_train, y_train)
 preds <- rf$predict(X_test)
 

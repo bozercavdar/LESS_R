@@ -147,13 +147,6 @@ LinearRegression <- R6::R6Class(classname = "LinearRegression",
                                   #' @return The predict values.
                                   #'
                                   #' @examples
-                                  #' data(abalone)
-                                  #' split_list <- train_test_split(abalone, test_size =  0.3)
-                                  #' X_train <- split_list[[1]]
-                                  #' X_test <- split_list[[2]]
-                                  #' y_train <- split_list[[3]]
-                                  #' y_test <- split_list[[4]]
-                                  #'
                                   #' lr <- LinearRegression$new()
                                   #' lr$fit(X_train, y_train)
                                   #' preds <- lr$predict(X_test)
@@ -252,13 +245,6 @@ DecisionTreeRegressor <- R6::R6Class(classname = "DecisionTreeRegressor",
                                        #' @return The predict values.
                                        #'
                                        #' @examples
-                                       #' data(abalone)
-                                       #' split_list <- train_test_split(abalone, test_size =  0.3)
-                                       #' X_train <- split_list[[1]]
-                                       #' X_test <- split_list[[2]]
-                                       #' y_train <- split_list[[3]]
-                                       #' y_test <- split_list[[4]]
-                                       #'
                                        #' dt <- DecisionTreeRegressor$new()
                                        #' dt$fit(X_train, y_train)
                                        #' preds <- dt$predict(X_test)
@@ -351,13 +337,6 @@ RandomForestRegressor <- R6::R6Class(classname = "RandomForestRegressor",
                                        #' @return The predict values.
                                        #'
                                        #' @examples
-                                       #' data(abalone)
-                                       #' split_list <- train_test_split(abalone, test_size =  0.3)
-                                       #' X_train <- split_list[[1]]
-                                       #' X_test <- split_list[[2]]
-                                       #' y_train <- split_list[[3]]
-                                       #' y_test <- split_list[[4]]
-                                       #'
                                        #' rf <- RandomForestRegressor$new()
                                        #' rf$fit(X_train, y_train)
                                        #' preds <- rf$predict(X_test)
@@ -1582,7 +1561,7 @@ LESSRegressor <- R6::R6Class(classname = "LESSRegressor",
                                #' lessRegressor <- LESSRegressor$new()
                                #' lessRegressor <- LESSRegressor$new(val_size = 0.3)
                                #' lessRegressor <- LESSRegressor$new(cluster_method = less::KMeans$new())
-                               #' lessRegressor <- LESSRegressor$new(val_size = 0.3)
+                               #' lessRegressor <- LESSRegressor$new(val_size = 0.3, cluster_method = less::KMeans$new())
                                initialize = function(frac = NULL, n_neighbors = NULL, n_subsets = NULL, n_replications = 20, d_normalize = TRUE, val_size = NULL,
                                                      random_state = NULL, tree_method = function(X) KDTree$new(X), cluster_method = NULL,
                                                      local_estimator = LinearRegression$new(), global_estimator = DecisionTreeRegressor$new(), distance_function = NULL,
@@ -1670,13 +1649,6 @@ LESSRegressor <- R6::R6Class(classname = "LESSRegressor",
                                #' @return Predicted values of the given predictors
                                #'
                                #' @examples
-                               #' data(abalone)
-                               #' split_list <- train_test_split(abalone, test_size =  0.3)
-                               #' X_train <- split_list[[1]]
-                               #' X_test <- split_list[[2]]
-                               #' y_train <- split_list[[3]]
-                               #' y_test <- split_list[[4]]
-                               #'
                                #' lessRegressor <- LESSRegressor$new()
                                #' lessRegressor$fit(X_train, y_train)
                                #' preds <- lessRegressor$predict(X_test)
