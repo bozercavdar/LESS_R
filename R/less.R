@@ -377,6 +377,79 @@ RandomForestRegressor <- R6::R6Class(classname = "RandomForestRegressor",
                                        }
                                      ))
 
+#' @title KNeighborsRegressor
+#'
+#' @description Wrapper R6 Class of caret::knnreg function that can be used for LESSRegressor and LESSClassifier
+#'
+#' @param k Number of neighbors considered (defaults to 5).
+#'
+#' @return R6 Class of KNeighborsRegressor
+#' @seealso [caret::knnreg()]
+#' @export
+KNeighborsRegressor <- R6::R6Class(classname = "KNeighborsRegressor",
+                                   inherit = SklearnEstimator,
+                                   private = list(
+                                     estimator_type = "regressor",
+                                     model = NULL,
+                                     k = NULL
+                                   ),
+                                   public = list(
+                                     #' @description Creates a new instance of R6 Class of KNeighborsRegressor
+                                     #'
+                                     #' @examples
+                                     #' knr <- KNeighborsRegressor$new()
+                                     #' knr <- KNeighborsRegressor$new(k = 5)
+                                     initialize = function(k = 5){
+                                       private$k = k
+                                     },
+                                     #' @description Fit the k-nearest neighbors regressor from the training set (X, y).
+                                     #'
+                                     #' @param X 2D matrix or dataframe that includes predictors
+                                     #' @param y 1D vector or (n,1) dimensional matrix/dataframe that includes response variables
+                                     #'
+                                     #' @return Fitted R6 Class of KNeighborsRegressor
+                                     #'
+                                     #' @examples
+                                     #' data(abalone)
+                                     #' split_list <- train_test_split(abalone, test_size =  0.3)
+                                     #' X_train <- split_list[[1]]
+                                     #' X_test <- split_list[[2]]
+                                     #' y_train <- split_list[[3]]
+                                     #' y_test <- split_list[[4]]
+                                     #'
+                                     #' knr <- KNeighborsRegressor$new()
+                                     #' knr$fit(X_train, y_train)
+                                     fit = function(X, y){
+                                       df <- prepareDataset(X, y)
+                                       private$model <- caret::knnreg(y ~ ., data = df, k=private$k)
+                                       invisible(self)
+                                     },
+                                     #' @description Predict regression value for X0.
+                                     #'
+                                     #' @param X0 2D matrix or dataframe that includes predictors
+                                     #'
+                                     #' @return The predict values.
+                                     #'
+                                     #' @examples
+                                     #' knr <- KNeighborsRegressor$new()
+                                     #' knr$fit(X_train, y_train)
+                                     #' preds <- knr$predict(X_test)
+                                     #'
+                                     #' knr <- KNeighborsRegressor$new()
+                                     #' preds <- knr$fit(X_train, y_train)$predict(X_test)
+                                     #'
+                                     #' preds <- KNeighborsRegressor$new()$fit(X_train, y_train)$predict(X_test)
+                                     #' print(head(matrix(c(y_test, preds), ncol = 2, dimnames = (list(NULL, c("True", "Prediction"))))))
+                                     predict = function(X0){
+                                       data <- prepareXset(X0)
+                                       predict(private$model, data)
+                                     },
+                                     #' @description Auxiliary function returning the estimator type e.g 'regressor', 'classifier'
+                                     get_estimator_type = function() {
+                                       return(private$estimator_type)
+                                     }
+                                   ))
+
 StandardScaler <- R6::R6Class(classname = "StandardScaler",
                               private = list(
                                 mean = NULL,
@@ -1710,14 +1783,22 @@ lessReg <- function(data = abalone) {
   # X_test <- as.matrix(data[401:nrow(data),-y_index])
   # y_test <- data[401:nrow(data),y_index]
 
-  # dt <- LinearRegression$new()
-  # preds <- dt$fit(X_train, y_train)$predict(X_test)
-  # print(head(matrix(c(y_test, preds), ncol = 2)))
-  # mape <- MLmetrics::MAPE(preds, y_test)
-  # cat("MAPE: ", mape, "\n")
+  dt <- KNeighborsRegressor$new()
+  preds <- dt$fit(X_train, y_train)$predict(X_test)
+  print(head(matrix(c(y_test, preds), ncol = 2)))
+  mape <- MLmetrics::MAPE(preds, y_test)
+  cat("MAPE: ", mape, "\n")
 
   # model_list <- c(LESSRegressor$new(), LinearRegression$new(), DecisionTreeRegressor$new())
   # comparison_plot(X_train, y_train, model_list)
+
+  cat("Total number of training samples: ", nrow(X_train), "\n")
+  LESS <- LESSRegressor$new(global_estimator = KNeighborsRegressor$new(k=5))
+  preds <- LESS$fit(X_train, y_train)$predict(X_test)
+  print(LESS)
+  print(head(matrix(c(y_test, preds), ncol = 2)))
+  mape <- MLmetrics::MAPE(preds, y_test)
+  cat("MAPE: ", mape, "\n")
 
   cat("Total number of training samples: ", nrow(X_train), "\n")
   LESS <- LESSRegressor$new()
@@ -1726,15 +1807,6 @@ lessReg <- function(data = abalone) {
   print(head(matrix(c(y_test, preds), ncol = 2)))
   mape <- MLmetrics::MAPE(preds, y_test)
   cat("MAPE: ", mape, "\n")
-
-  cat("Total number of training samples: ", nrow(X_train), "\n")
-  LESS <- LESSRegressor$new(global_estimator = RandomForestRegressor$new())
-  preds <- LESS$fit(X_train, y_train)$predict(X_test)
-  print(LESS)
-  print(head(matrix(c(y_test, preds), ncol = 2)))
-  mape <- MLmetrics::MAPE(preds, y_test)
-  cat("MAPE: ", mape, "\n")
-
 
   # UNCOMMENT THIS CODE BLOCK TO SEE ERROR COMPARISON BETWEEN DIFFERENT ESTIMATORS
   # models <- list(LESSRegressor$new(),

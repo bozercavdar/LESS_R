@@ -3,6 +3,7 @@
 export(DecisionTreeRegressor)
 export(KDTree)
 export(KMeans)
+export(KNeighborsRegressor)
 export(LESSRegressor)
 export(LinearRegression)
 export(RandomForestRegressor)
