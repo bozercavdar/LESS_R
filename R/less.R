@@ -364,6 +364,7 @@ RandomForestRegressor <- R6::R6Class(classname = "RandomForestRegressor",
 #'
 #' @return R6 Class of KNeighborsRegressor
 #' @seealso [caret::knnreg()]
+#' @importFrom caret knnreg
 #' @export
 KNeighborsRegressor <- R6::R6Class(classname = "KNeighborsRegressor",
                                    inherit = SklearnEstimator,
