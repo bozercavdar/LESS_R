@@ -105,6 +105,7 @@ Replication <- R6::R6Class(classname = "Replication",
 #' @description Wrapper R6 Class of stats::lm function that can be used for LESSRegressor and LESSClassifier
 #'
 #' @return R6 Class of LinearRegression
+#' @importFrom stats lm
 #' @seealso [stats::lm()]
 #' @export
 LinearRegression <- R6::R6Class(classname = "LinearRegression",
@@ -203,6 +204,7 @@ LinearRegression <- R6::R6Class(classname = "LinearRegression",
 #' @description Wrapper R6 Class of party::ctree function that can be used for LESSRegressor and LESSClassifier
 #'
 #' @return R6 Class of DecisionTreeRegressor
+#' @importFrom party ctree
 #' @seealso [party::ctree()]
 #' @export
 DecisionTreeRegressor <- R6::R6Class(classname = "DecisionTreeRegressor",
@@ -279,6 +281,7 @@ DecisionTreeRegressor <- R6::R6Class(classname = "DecisionTreeRegressor",
 #' If set larger than maximum possible, a warning is issued. (defaults to NULL)
 #'
 #' @return R6 Class of RandomForestRegressor
+#' @importFrom randomForest randomForest
 #' @seealso [randomForest::randomForest()]
 #' @export
 RandomForestRegressor <- R6::R6Class(classname = "RandomForestRegressor",
@@ -530,6 +533,7 @@ LESSWarn <- R6::R6Class(classname = "LESSWarn",
 #' @param X An \strong{M x d} data.frame or matrix, where each of the \strong{M} rows is a point or a (column) vector (where \strong{d=1}).
 #'
 #' @return R6 Class of KDTree
+#' @importFrom RANN nn2
 #' @seealso [RANN::nn2()]
 #' @export
 KDTree <- R6::R6Class(classname = "KDTree",
@@ -579,6 +583,7 @@ KDTree <- R6::R6Class(classname = "KDTree",
 #' @param random_state seed number to be used for fixing the randomness (default to NULL).
 #'
 #' @return R6 Class of KMeans
+#' @importFrom stats kmeans
 #' @seealso [stats::kmeans()]
 #' @export
 KMeans <- R6::R6Class(classname = "KMeans",
