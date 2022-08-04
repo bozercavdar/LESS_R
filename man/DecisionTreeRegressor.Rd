@@ -7,9 +7,17 @@
 R6 Class of DecisionTreeRegressor
 }
 \description{
-Wrapper R6 Class of party::ctree function that can be used for LESSRegressor and LESSClassifier
+Wrapper R6 Class of rpart::rpart function that can be used for LESSRegressor and LESSClassifier
 }
 \examples{
+
+## ------------------------------------------------
+## Method `DecisionTreeRegressor$new`
+## ------------------------------------------------
+
+dt <- DecisionTreeRegressor$new()
+dt <- DecisionTreeRegressor$new(min_samples_split = 10)
+dt <- DecisionTreeRegressor$new(min_samples_leaf = 6, cp = 0.01)
 
 ## ------------------------------------------------
 ## Method `DecisionTreeRegressor$fit`
@@ -40,7 +48,7 @@ preds <- DecisionTreeRegressor$new()$fit(X_train, y_train)$predict(X_test)
 print(head(matrix(c(y_test, preds), ncol = 2, dimnames = (list(NULL, c("True", "Prediction"))))))
 }
 \seealso{
-\code{\link[party:ctree]{party::ctree()}}
+\code{\link[rpart:rpart]{rpart::rpart()}}
 }
 \section{Super classes}{
 \code{\link[less:BaseEstimator]{less::BaseEstimator}} -> \code{\link[less:SklearnEstimator]{less::SklearnEstimator}} -> \code{DecisionTreeRegressor}
@@ -48,6 +56,7 @@ print(head(matrix(c(y_test, preds), ncol = 2, dimnames = (list(NULL, c("True", "
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
+\item \href{#method-DecisionTreeRegressor-new}{\code{DecisionTreeRegressor$new()}}
 \item \href{#method-DecisionTreeRegressor-fit}{\code{DecisionTreeRegressor$fit()}}
 \item \href{#method-DecisionTreeRegressor-predict}{\code{DecisionTreeRegressor$predict()}}
 \item \href{#method-DecisionTreeRegressor-get_estimator_type}{\code{DecisionTreeRegressor$get_estimator_type()}}
@@ -64,6 +73,47 @@ print(head(matrix(c(y_test, preds), ncol = 2, dimnames = (list(NULL, c("True", "
 </ul>
 </details>
 }}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-DecisionTreeRegressor-new"></a>}}
+\if{latex}{\out{\hypertarget{method-DecisionTreeRegressor-new}{}}}
+\subsection{Method \code{new()}}{
+Creates a new instance of R6 Class of DecisionTreeRegressor
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{DecisionTreeRegressor$new(
+  min_samples_split = 2,
+  min_samples_leaf = 1,
+  cp = 0.001,
+  max_depth = 30
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{min_samples_split}}{The minimum number of observations that must exist in a node in order for a split to be attempted (defaults to 2).}
+
+\item{\code{min_samples_leaf}}{The minimum number of observations in any terminal (leaf) node (defaults to 1).}
+
+\item{\code{cp}}{Complexity Parameter. Any split that does not decrease the overall lack of fit by a factor of cp is not attempted.
+This means that the overall R-squared must increase by cp at each step. The main role of this parameter is
+to save computing time by pruning off splits that are obviously not worthwhile. (defaults to 0.001)}
+
+\item{\code{max_depth}}{The maximum depth of any node of the final tree, with the root node counted as depth 0.
+Values greater than 30 will give nonsense results on 32-bit machines.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Examples}{
+\if{html}{\out{<div class="r example copy">}}
+\preformatted{dt <- DecisionTreeRegressor$new()
+dt <- DecisionTreeRegressor$new(min_samples_split = 10)
+dt <- DecisionTreeRegressor$new(min_samples_leaf = 6, cp = 0.01)
+}
+\if{html}{\out{</div>}}
+
+}
+
+}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DecisionTreeRegressor-fit"></a>}}
 \if{latex}{\out{\hypertarget{method-DecisionTreeRegressor-fit}{}}}

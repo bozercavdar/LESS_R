@@ -172,32 +172,100 @@ LinearRegression <- R6::R6Class(classname = "LinearRegression",
                                 )
                                 )
 
-# Decision Tree wrapper class with using rpart package
-# DecisionTreeRegressor <- R6::R6Class(classname = "DecisionTreeRegressor",
-#                                      inherit = SklearnEstimator,
-#                                      private = list(
-#                                        estimator_type = "regressor",
-#                                        model = NULL
-#                                      ),
-#                                      public = list(
-#                                        fit = function(X, y) {
-#                                          df <- prepareDataset(X, y)
-#                                          private$model <- rpart::rpart(y ~ ., method = "anova", data = df, control = rpart::rpart.control(minsplit = 2, minbucket = 1, cp = 0.002))
-#                                          rpart.plot::rpart.plot(private$model)
-#                                          # summary(private$model)
-#                                          invisible(self)
-#                                          # print("model: ")
-#
-#                                        },
-#                                        predict = function(X) {
-#                                          data <- prepareXset(X)
-#                                          predict(private$model, data, method = "anova")
-#                                        },
-#                                        get_estimator_type = function() {
-#                                          return(private$estimator_type)
-#                                        }
-#                                      )
-#                                      )
+#' @title DecisionTreeRegressor
+#'
+#' @description Wrapper R6 Class of rpart::rpart function that can be used for LESSRegressor and LESSClassifier
+#'
+#' @param min_samples_split The minimum number of observations that must exist in a node in order for a split to be attempted (defaults to 2).
+#' @param min_samples_leaf The minimum number of observations in any terminal (leaf) node (defaults to 1).
+#' @param cp Complexity Parameter. Any split that does not decrease the overall lack of fit by a factor of cp is not attempted.
+#' This means that the overall R-squared must increase by cp at each step. The main role of this parameter is
+#' to save computing time by pruning off splits that are obviously not worthwhile. (defaults to 0.001)
+#' @param max_depth The maximum depth of any node of the final tree, with the root node counted as depth 0.
+#' Values greater than 30 will give nonsense results on 32-bit machines.
+#'
+#' @return R6 Class of DecisionTreeRegressor
+#' @importFrom rpart rpart
+#' @seealso [rpart::rpart()]
+#' @export
+DecisionTreeRegressor <- R6::R6Class(classname = "DecisionTreeRegressor",
+                                     inherit = SklearnEstimator,
+                                     private = list(
+                                       estimator_type = "regressor",
+                                       model = NULL,
+                                       min_samples_split = NULL,
+                                       min_samples_leaf = NULL,
+                                       cp = NULL,
+                                       max_depth = NULL
+                                     ),
+                                     public = list(
+                                       #' @description Creates a new instance of R6 Class of DecisionTreeRegressor
+                                       #'
+                                       #' @examples
+                                       #' dt <- DecisionTreeRegressor$new()
+                                       #' dt <- DecisionTreeRegressor$new(min_samples_split = 10)
+                                       #' dt <- DecisionTreeRegressor$new(min_samples_leaf = 6, cp = 0.01)
+                                       initialize = function(min_samples_split = 2, min_samples_leaf = 1, cp = 0.001, max_depth = 30){
+                                         private$min_samples_split = min_samples_split
+                                         private$min_samples_leaf = min_samples_leaf
+                                         private$cp = cp
+                                         private$max_depth = max_depth
+                                       },
+                                       #' @description Builds a decision tree regressor from the training set (X, y).
+                                       #'
+                                       #' @param X 2D matrix or dataframe that includes predictors
+                                       #' @param y 1D vector or (n,1) dimensional matrix/dataframe that includes response variables
+                                       #'
+                                       #' @return Fitted R6 Class of DecisionTreeRegressor
+                                       #'
+                                       #' @examples
+                                       #' data(abalone)
+                                       #' split_list <- train_test_split(abalone, test_size =  0.3)
+                                       #' X_train <- split_list[[1]]
+                                       #' X_test <- split_list[[2]]
+                                       #' y_train <- split_list[[3]]
+                                       #' y_test <- split_list[[4]]
+                                       #'
+                                       #' dt <- DecisionTreeRegressor$new()
+                                       #' dt$fit(X_train, y_train)
+                                       fit = function(X, y) {
+                                         df <- prepareDataset(X, y)
+                                         private$model <- rpart::rpart(y ~ ., method = "anova", data = df,
+                                                                       control = rpart::rpart.control(minsplit = private$min_samples_split,
+                                                                                                      minbucket = private$min_samples_leaf,
+                                                                                                      cp = private$cp, maxdepth = private$max_depth))
+                                         # rpart.plot::rpart.plot(private$model)
+                                         # summary(private$model)
+                                         invisible(self)
+                                         # print("model: ")
+
+                                       },
+                                       #' @description Predict regression value for X0.
+                                       #'
+                                       #' @param X0 2D matrix or dataframe that includes predictors
+                                       #'
+                                       #' @return The predict values.
+                                       #'
+                                       #' @examples
+                                       #' dt <- DecisionTreeRegressor$new()
+                                       #' dt$fit(X_train, y_train)
+                                       #' preds <- dt$predict(X_test)
+                                       #'
+                                       #' dt <- DecisionTreeRegressor$new()
+                                       #' preds <- dt$fit(X_train, y_train)$predict(X_test)
+                                       #'
+                                       #' preds <- DecisionTreeRegressor$new()$fit(X_train, y_train)$predict(X_test)
+                                       #' print(head(matrix(c(y_test, preds), ncol = 2, dimnames = (list(NULL, c("True", "Prediction"))))))
+                                       predict = function(X0) {
+                                         data <- prepareXset(X0)
+                                         predict(private$model, data, method = "anova")
+                                       },
+                                       #' @description Auxiliary function returning the estimator type e.g 'regressor', 'classifier'
+                                       get_estimator_type = function() {
+                                         return(private$estimator_type)
+                                       }
+                                     )
+                                     )
 
 #' @title DecisionTreeRegressor
 #'
@@ -207,7 +275,7 @@ LinearRegression <- R6::R6Class(classname = "LinearRegression",
 #' @importFrom party ctree
 #' @seealso [party::ctree()]
 #' @export
-DecisionTreeRegressor <- R6::R6Class(classname = "DecisionTreeRegressor",
+DecisionTreeRegressor2 <- R6::R6Class(classname = "DecisionTreeRegressor2",
                                      inherit = SklearnEstimator,
                                      private = list(
                                        estimator_type = "regressor",
@@ -663,6 +731,12 @@ KMeans <- R6::R6Class(classname = "KMeans",
 #'
 #' @return A numeric vector containing the Radial basis function kernel distance between each point in \strong{data} and \strong{center}.
 #' @export
+#'
+#' @examples
+#' data <- matrix(1:12, nrow=3)
+#' center <- c(2, 7, 1, 3)
+#' distances <- rbf(data, center)
+#' print(distances)
 rbf <- function(data, center, coeff=0.01){
   dataDiff <- sweep(data, 2, center) #extract center from all rows of data e.g. (data-center)
   normRows <- wordspace::rowNorms(dataDiff, method = "euclidean", p=2) #take l2 norms of each row
@@ -679,6 +753,12 @@ rbf <- function(data, center, coeff=0.01){
 #'
 #' @return A numeric vector containing the laplacian kernel distance between each point in \strong{data} and \strong{center}.
 #' @export
+#'
+#' @examples
+#' data <- matrix(1:12, nrow=3)
+#' center <- c(2, 7, 1, 3)
+#' distances <- laplacian(data, center)
+#' print(distances)
 laplacian <- function(data, center, coeff=0.01){
   dataDiff <- sweep(data, 2, center) #extract center from all rows of data e.g. (data-center)
   normRows <- wordspace::rowNorms(dataDiff, method = "manhattan", p=1) #take l1 norms of each row
@@ -912,21 +992,19 @@ synthetic_sine_curve = function() {
 }
 
 comparison_plot = function(X, y, model_list){
-  color_list <- colors()[sample.int(length(colors()), length(model_list))]
+  xlb <- floor(min(X)-1)
+  xub <- floor(max(X)+1)
+  xvals <- seq(xlb, xub, by=0.1)
+  color_list <- c("blue", "green", "red", "black", "brown", "purple", "orange", "seagreen2")
   color_index <- 1
-  model_names <- list("True")
-  plot(X, y, pch = 19, col=color_list[color_index], ylab="",yaxt="n", xlab="",xaxt="n")
-  par(new=TRUE)
+  par(mfrow=c(length(model_list)/2+1, 2))
+  plot(X, y, main = "True", pch = 19, col=color_list[color_index], ylab="",yaxt="n", xlab="",xaxt="n")
+  # par(new=TRUE)
   for (model in model_list) {
     color_index <- color_index + 1
-    model_names <- append(model_names, getClassName(model))
-    y_pred <- model$fit(X, y)$predict(X)
-    plot(X, y_pred, pch = 19, col=color_list[color_index],  ylab="",yaxt="n", xlab="",xaxt="n")
-    par(new=TRUE)
+    y_pred <- model$fit(X, y)$predict(prepareXset(xvals))
+    plot(xvals, y_pred, main=getClassName(model), type="l", lwd = 2, pch = 19, col=color_list[color_index],  ylab="",yaxt="n", xlab="",xaxt="n")
   }
-  legend("topleft", legend=model_names,
-         col=color_list, lty=1:2, cex=0.8)
-  par(new=FALSE)
 }
 
 
@@ -1736,24 +1814,18 @@ synthetic_sine_data <- cbind(X_sine, y_sine)
 
 #########################
 
-
-#' #' Apply LESS regression
-#'
-#' @param data
-#'
-#' @export
-lessReg <- function(data = abalone) {
+lessReg <- function(data = superconduct) {
   # UNCOMMENT THIS CODE BLOCK TO PROFILE THE CODE AND SEE A PERFORMANCE ANALYSIS OF THE CODE
   # profvis::profvis({
   #
   # })
 
   # Now Selecting 70% of data as sample from total 'n' rows of the data
-  split_list <- train_test_split(data, test_size =  0.3, random_state = 1)
-  X_train <- split_list[[1]]
-  X_test <- split_list[[2]]
-  y_train <- split_list[[3]]
-  y_test <- split_list[[4]]
+  # split_list <- train_test_split(data, test_size =  0.3)
+  # X_train <- split_list[[1]]
+  # X_test <- split_list[[2]]
+  # y_train <- split_list[[3]]
+  # y_test <- split_list[[4]]
 
   # y_index = 1
   # X_train <- as.matrix(data[1:400,-y_index])
@@ -1761,39 +1833,62 @@ lessReg <- function(data = abalone) {
   # X_test <- as.matrix(data[401:nrow(data),-y_index])
   # y_test <- data[401:nrow(data),y_index]
 
-  dt <- KNeighborsRegressor$new()
-  preds <- dt$fit(X_train, y_train)$predict(X_test)
-  print(head(matrix(c(y_test, preds), ncol = 2)))
-  mape <- MLmetrics::MAPE(preds, y_test)
-  cat("MAPE: ", mape, "\n")
+  # dt <- KNeighborsRegressor$new()
+  # preds <- dt$fit(X_train, y_train)$predict(X_test)
+  # print(head(matrix(c(y_test, preds), ncol = 2)))
+  # mape <- MLmetrics::MAPE(preds, y_test)
+  # cat("MAPE: ", mape, "\n")
 
-  # model_list <- c(LESSRegressor$new(), LinearRegression$new(), DecisionTreeRegressor$new())
+  # cat("Total number of training samples: ", nrow(X_train), "\n")
+  # LESS <- LESSRegressor$new(global_estimator = KNeighborsRegressor$new(k=5))
+  # preds <- LESS$fit(X_train, y_train)$predict(X_test)
+  # print(LESS)
+  # print(head(matrix(c(y_test, preds), ncol = 2)))
+  # mape <- MLmetrics::MAPE(preds, y_test)
+  # cat("MAPE: ", mape, "\n")
+  #
+  # cat("Total number of training samples: ", nrow(X_train), "\n")
+  # LESS <- LESSRegressor$new()
+  # preds <- LESS$fit(X_train, y_train)$predict(X_test)
+  # print(LESS)
+  # print(head(matrix(c(y_test, preds), ncol = 2)))
+  # mape <- MLmetrics::MAPE(preds, y_test)
+  # cat("MAPE: ", mape, "\n")
+
+}
+
+comparison = function(dataset = superconduct){
+  data_list <- list("abalone"= abalone, "machine" = machine, "insurance" = insurance,
+                    "forestFires" = forestFires, "concrete" = concrete)
+  model_list <- c(LESSRegressor$new(),
+                  LESSRegressor$new(global_estimator = DecisionTreeRegressor2$new()),
+                  DecisionTreeRegressor$new(),
+                  DecisionTreeRegressor2$new(),
+                  LinearRegression$new(),
+                  KNeighborsRegressor$new(),
+                  RandomForestRegressor$new())
+  model_name_list <- c("LESS-rpart", "LESS-party", "DT-rpart", "DT-party", "LR", "KNN", "RF")
   # comparison_plot(X_train, y_train, model_list)
 
-  cat("Total number of training samples: ", nrow(X_train), "\n")
-  LESS <- LESSRegressor$new(global_estimator = KNeighborsRegressor$new(k=5))
-  preds <- LESS$fit(X_train, y_train)$predict(X_test)
-  print(LESS)
-  print(head(matrix(c(y_test, preds), ncol = 2)))
-  mape <- MLmetrics::MAPE(preds, y_test)
-  cat("MAPE: ", mape, "\n")
-
-  cat("Total number of training samples: ", nrow(X_train), "\n")
-  LESS <- LESSRegressor$new()
-  preds <- LESS$fit(X_train, y_train)$predict(X_test)
-  print(LESS)
-  print(head(matrix(c(y_test, preds), ncol = 2)))
-  mape <- MLmetrics::MAPE(preds, y_test)
-  cat("MAPE: ", mape, "\n")
-
-  # UNCOMMENT THIS CODE BLOCK TO SEE ERROR COMPARISON BETWEEN DIFFERENT ESTIMATORS
-  # models <- list(LESSRegressor$new(),
-  #                LinearRegression$new(),
-  #                DecisionTreeRegressor$new())
-  # for(model in models){
-  #   preds <- model$fit(X_train, y_train)$predict(X_test)
-  #   mape <- MLmetrics::MSE(preds, y_test)
-  #   cat(getClassName(model), " MSE: ", mape, "\n")
-  # }
+  for(d in 1:length(data_list)){
+    data <- data_list[[d]]
+    print(names(data_list)[d])
+    for(i in 1:length(model_list)){
+      mse_matrix <- matrix(0, 5, 1)
+      mape_matrix <- matrix(0, 5, 1)
+      for (a in 1:5) {
+        split_list <- train_test_split(data, test_size =  0.3)
+        X_train <- split_list[[1]]
+        X_test <- split_list[[2]]
+        y_train <- split_list[[3]]
+        y_test <- split_list[[4]]
+        preds <- model_list[[i]]$fit(X_train, y_train)$predict(X_test)
+        mse_matrix[a,1] <- MLmetrics::MSE(preds, y_test)
+        mape_matrix[a,1] <- MLmetrics::MAPE(preds, y_test)
+      }
+      cat(model_name_list[[i]], "MSE:", colMeans(mse_matrix), "\n")
+      cat(model_name_list[[i]], "MAPE:", colMeans(mape_matrix), "\n")
+    }
+  }
 
 }

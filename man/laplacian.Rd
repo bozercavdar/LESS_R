@@ -19,3 +19,9 @@ A numeric vector containing the laplacian kernel distance between each point in 
 \description{
 An alternative distance function that can be used in LESS.
 }
+\examples{
+data <- matrix(1:12, nrow=3)
+center <- c(2, 7, 1, 3)
+distances <- laplacian(data, center)
+print(distances)
+}

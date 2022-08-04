@@ -19,3 +19,9 @@ A numeric vector containing the Radial basis function kernel distance between ea
 \description{
 The default distance function in LESS.
 }
+\examples{
+data <- matrix(1:12, nrow=3)
+center <- c(2, 7, 1, 3)
+distances <- rbf(data, center)
+print(distances)
+}
