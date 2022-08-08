@@ -501,6 +501,69 @@ KNeighborsRegressor <- R6::R6Class(classname = "KNeighborsRegressor",
                                      }
                                    ))
 
+#' @title Support Vector Regression
+#'
+#' @description Wrapper R6 Class of e1071::svm function that can be used for LESSRegressor and LESSClassifier
+#'
+#' @return R6 Class of SVR
+#' @seealso [e1071::svm()]
+#' @importFrom e1071 svm
+#' @export
+SVR <- R6::R6Class(classname = "SVR",
+                   inherit = SklearnEstimator,
+                   private = list(
+                     estimator_type = "regressor",
+                     model = NULL
+                   ),
+                   public = list(
+                     #' @description Fit the SVM model from the training set (X, y).
+                     #'
+                     #' @param X 2D matrix or dataframe that includes predictors
+                     #' @param y 1D vector or (n,1) dimensional matrix/dataframe that includes response variables
+                     #'
+                     #' @return Fitted R6 Class of SVR
+                     #'
+                     #' @examples
+                     #' data(abalone)
+                     #' split_list <- train_test_split(abalone, test_size =  0.3)
+                     #' X_train <- split_list[[1]]
+                     #' X_test <- split_list[[2]]
+                     #' y_train <- split_list[[3]]
+                     #' y_test <- split_list[[4]]
+                     #'
+                     #' svr <- SVR$new()
+                     #' svr$fit(X_train, y_train)
+                     fit = function(X, y){
+                       df <- prepareDataset(X, y)
+                       private$model <- e1071::svm(y ~ ., data = df)
+                       invisible(self)
+                     },
+                     #' @description Predict regression value for X0.
+                     #'
+                     #' @param X0 2D matrix or dataframe that includes predictors
+                     #'
+                     #' @return The predict values.
+                     #'
+                     #' @examples
+                     #' svr <- SVR$new()
+                     #' svr$fit(X_train, y_train)
+                     #' preds <- svr$predict(X_test)
+                     #'
+                     #' svr <- SVR$new()
+                     #' preds <- svr$fit(X_train, y_train)$predict(X_test)
+                     #'
+                     #' preds <- SVR$new()$fit(X_train, y_train)$predict(X_test)
+                     #' print(head(matrix(c(y_test, preds), ncol = 2, dimnames = (list(NULL, c("True", "Prediction"))))))
+                     predict = function(X0){
+                       data <- prepareXset(X0)
+                       predict(private$model, data)
+                     },
+                     #' @description Auxiliary function returning the estimator type e.g 'regressor', 'classifier'
+                     get_estimator_type = function() {
+                       return(private$estimator_type)
+                     }
+                   ))
+
 StandardScaler <- R6::R6Class(classname = "StandardScaler",
                               private = list(
                                 mean = NULL,
@@ -715,6 +778,35 @@ KMeans <- R6::R6Class(classname = "KMeans",
                           return(private$labels)
                         }
                       ))
+
+HierarchicalClustering <- R6::R6Class(classname = "HierarchicalClustering",
+                                      inherit = BaseEstimator,
+                                      private = list(
+                                        model = NULL,
+                                        n_clusters = NULL,
+                                        linkage = NULL,
+                                        labels = NULL
+                                      ),
+                                      public = list(
+                                        # "ward.D", "ward.D2", "single", "complete", "average" (= UPGMA), "mcquitty" (= WPGMA), "median" (= WPGMC) or "centroid" (= UPGMC).
+                                        initialize = function(linkage = "ward.D2", n_clusters = 8){
+                                          private$linkage <- linkage
+                                          private$n_clusters <- n_clusters
+                                        },
+                                        fit = function(X){
+                                          private$model <- stats::hclust(dist(X))
+                                          # cut_tree <- cutree(private$model, k = private$n_clusters)
+                                          # indexes <- names(cut_tree)
+                                          private$labels <- private$model$labels
+                                          invisible(self)
+                                        },
+                                        get_labels = function(){
+                                          return(private$labels)
+                                        },
+                                        get_model = function(){
+                                          return(private$model)
+                                        }
+                                      ))
 
 
 ####################
@@ -1814,27 +1906,33 @@ synthetic_sine_data <- cbind(X_sine, y_sine)
 
 #########################
 
-lessReg <- function(data = superconduct) {
+test <- function(data = abalone) {
   # UNCOMMENT THIS CODE BLOCK TO PROFILE THE CODE AND SEE A PERFORMANCE ANALYSIS OF THE CODE
   # profvis::profvis({
   #
   # })
 
   # Now Selecting 70% of data as sample from total 'n' rows of the data
-  # split_list <- train_test_split(data, test_size =  0.3)
-  # X_train <- split_list[[1]]
-  # X_test <- split_list[[2]]
-  # y_train <- split_list[[3]]
-  # y_test <- split_list[[4]]
+  split_list <- train_test_split(data, test_size =  0.3)
+  X_train <- split_list[[1]]
+  X_test <- split_list[[2]]
+  y_train <- split_list[[3]]
+  y_test <- split_list[[4]]
 
   # y_index = 1
   # X_train <- as.matrix(data[1:400,-y_index])
   # y_train <- data[1:400,y_index]
   # X_test <- as.matrix(data[401:nrow(data),-y_index])
   # y_test <- data[401:nrow(data),y_index]
-
-  # dt <- KNeighborsRegressor$new()
-  # preds <- dt$fit(X_train, y_train)$predict(X_test)
+  data <- c(1,2,3, 9, 10, 11)
+  hc <- HierarchicalClustering$new(linkage= "ward.D", n_clusters = 2)
+  hc$fit(data)
+  labels <- hc$get_model()
+  print(labels)
+  # tr <- cutree(hc$get_model(), k = 10)
+  # print(sort(names(tr)))
+  # model <- SVR$new()
+  # preds <- model$fit(X_train, y_train)$predict(X_test)
   # print(head(matrix(c(y_test, preds), ncol = 2)))
   # mape <- MLmetrics::MAPE(preds, y_test)
   # cat("MAPE: ", mape, "\n")
