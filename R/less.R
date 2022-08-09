@@ -1162,6 +1162,12 @@ synthetic_sine_curve = function(n_samples=200) {
   return(list(X, y))
 }
 
+#' @title Comparsion Plot
+#'
+#' @description Plots the fitted functions obtained with various regressors (using their default values) on the
+#' one-dimensional dataset (X, y).
+#'
+#' @export
 comparison_plot = function(X, y, model_list){
   xlb <- floor(min(X)-1)
   xub <- floor(max(X)+1)
