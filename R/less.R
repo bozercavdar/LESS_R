@@ -1137,7 +1137,12 @@ check_X_y = function(X, y){
   return(list(X, y))
 }
 
-
+#' @title Synthetic Sine Curve
+#'
+#' @description A simple function to generate n_samples from sine curve in the range (-10, 10) with some amplitude.
+#' The function returns the dataset (X, y), and plots the function (curve) along with the dataset (circles)
+#'
+#' @export
 synthetic_sine_curve = function(n_samples=200) {
   xvals <- seq(-10,10,length.out=n_samples+1)[-(n_samples+1)]
 
@@ -1148,6 +1153,12 @@ synthetic_sine_curve = function(n_samples=200) {
     X[i] <- xran
     y[i] <- 10*sin(xran) + 2.5*rnorm(1)
   }
+
+  plot(xvals, 10*sin(xvals), type = "l", col="red", ylab="",yaxt="n", xlab="",xaxt="n")
+  par(new=TRUE)
+  plot(X, y, pch = 19, col="blue",  ylab="",yaxt="n", xlab="",xaxt="n")
+  par(new=FALSE)
+
   return(list(X, y))
 }
 
@@ -2049,7 +2060,7 @@ testFunc <- function(data = abalone) {
   # mape <- MLmetrics::MAPE(preds, y_test)
   # cat("MAPE: ", mape, "\n")
 
-  get_functions()
+  synthetic_sine_curve()
 
 }
 
