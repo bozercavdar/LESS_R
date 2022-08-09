@@ -1138,20 +1138,16 @@ check_X_y = function(X, y){
 }
 
 
-synthetic_sine_curve = function() {
-  xvals <- seq(-10,10,length.out=201)[-201]
-  # plot(xvals, 10*sin(xvals), type = "l", col="red", ylab="",yaxt="n", xlab="",xaxt="n")
-  # par(new=TRUE)
+synthetic_sine_curve = function(n_samples=200) {
+  xvals <- seq(-10,10,length.out=n_samples+1)[-(n_samples+1)]
 
-  X <- rep(0, 200)
-  y <- rep(0, 200)
-  for(i in 1:200){
+  X <- rep(0, n_samples)
+  y <- rep(0, n_samples)
+  for(i in 1:n_samples){
     xran <- -10 + 20*runif(1)
     X[i] <- xran
     y[i] <- 10*sin(xran) + 2.5*rnorm(1)
   }
-  # plot(X, y, pch = 19, col="blue",  ylab="",yaxt="n", xlab="",xaxt="n")
-
   return(list(X, y))
 }
 
@@ -1159,7 +1155,7 @@ comparison_plot = function(X, y, model_list){
   xlb <- floor(min(X)-1)
   xub <- floor(max(X)+1)
   xvals <- seq(xlb, xub, by=0.1)
-  color_list <- c("blue", "green", "red", "black", "brown", "purple", "orange", "seagreen2")
+  color_list <- c("blue", "green", "red", "black", "brown", "purple", "orange", "seagreen2", "pink")
   color_index <- 1
   par(mfrow=c(length(model_list)/2+1, 2))
   plot(X, y, main = "True", pch = 19, col=color_list[color_index], ylab="",yaxt="n", xlab="",xaxt="n")
@@ -2057,7 +2053,13 @@ testFunc <- function(data = abalone) {
 
 }
 
-comparison = function(dataset = superconduct){
+comparison = function(dataset = synthetic_sine_data){
+  # split_list <- train_test_split(dataset, test_size =  0.3)
+  # X_train <- split_list[[1]]
+  # X_test <- split_list[[2]]
+  # y_train <- split_list[[3]]
+  # y_test <- split_list[[4]]
+
   data_list <- list("abalone"= abalone, "machine" = machine, "insurance" = insurance,
                     "forestFires" = forestFires, "concrete" = concrete)
   model_list <- c(LESSRegressor$new(),
@@ -2066,8 +2068,9 @@ comparison = function(dataset = superconduct){
                   DecisionTreeRegressor2$new(),
                   LinearRegression$new(),
                   KNeighborsRegressor$new(),
-                  RandomForestRegressor$new())
-  model_name_list <- c("LESS-rpart", "LESS-party", "DT-rpart", "DT-party", "LR", "KNN", "RF")
+                  RandomForestRegressor$new(),
+                  SVR$new())
+  model_name_list <- c("LESS-rpart", "LESS-party", "DT-rpart", "DT-party", "LR", "KNN", "RF", "SVR")
   # comparison_plot(X_train, y_train, model_list)
 
   for(d in 1:length(data_list)){
