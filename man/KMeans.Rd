@@ -31,18 +31,12 @@ km$fit(abalone)
 ## Method `KMeans$get_cluster_centers`
 ## ------------------------------------------------
 
-data(abalone)
-km <- KMeans$new()
-km$fit(abalone)
 print(km$get_cluster_centers())
 
 ## ------------------------------------------------
 ## Method `KMeans$get_labels`
 ## ------------------------------------------------
 
-data(abalone)
-km <- KMeans$new()
-km$fit(abalone)
 print(km$get_labels())
 }
 \seealso{
@@ -144,10 +138,7 @@ Auxiliary function returning the cluster centers
 
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
-\preformatted{data(abalone)
-km <- KMeans$new()
-km$fit(abalone)
-print(km$get_cluster_centers())
+\preformatted{print(km$get_cluster_centers())
 }
 \if{html}{\out{</div>}}
 
@@ -165,10 +156,7 @@ Auxiliary function returning a vector of integers (from 1:k) indicating the clus
 
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
-\preformatted{data(abalone)
-km <- KMeans$new()
-km$fit(abalone)
-print(km$get_labels())
+\preformatted{print(km$get_labels())
 }
 \if{html}{\out{</div>}}
 

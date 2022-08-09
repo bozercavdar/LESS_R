@@ -741,7 +741,6 @@ KMeans <- R6::R6Class(classname = "KMeans",
                           private$max_iter = max_iter
                           private$random_state = random_state
                         },
-
                         #' @description Perform k-means clustering on a data matrix.
                         #'
                         #' @param X numeric matrix of data, or an object that can be coerced to such a matrix (such as a numeric vector or a data frame with all numeric columns).
@@ -761,50 +760,77 @@ KMeans <- R6::R6Class(classname = "KMeans",
                         },
                         #' @description Auxiliary function returning the cluster centers
                         #' @examples
-                        #' data(abalone)
-                        #' km <- KMeans$new()
-                        #' km$fit(abalone)
                         #' print(km$get_cluster_centers())
                         get_cluster_centers = function(){
                           return(private$cluster_centers)
                         },
                         #' @description Auxiliary function returning a vector of integers (from 1:k) indicating the cluster to which each point is allocated.
                         #' @examples
-                        #' data(abalone)
-                        #' km <- KMeans$new()
-                        #' km$fit(abalone)
                         #' print(km$get_labels())
                         get_labels = function(){
                           return(private$labels)
                         }
                       ))
 
+#' @title Hierarchical Clustering
+#'
+#' @description Wrapper R6 Class of stats::hclust function that can be used for LESSRegressor and LESSClassifier
+#'
+#' @param linkage the agglomeration method to be used. This should be (an unambiguous abbreviation of) one of
+#' "ward.D", "ward.D2", "single", "complete", "average" (= UPGMA), "mcquitty" (= WPGMA), "median" (= WPGMC) or "centroid" (= UPGMC)
+#' (defaults to ward.D2).
+#' @param n_clusters the number of clusters (defaults to 8).
+#'
+#' @return R6 Class of HierarchicalClustering
+#' @importFrom stats hclust
+#' @seealso [stats::hclust()]
+#' @export
 HierarchicalClustering <- R6::R6Class(classname = "HierarchicalClustering",
                                       inherit = BaseEstimator,
                                       private = list(
                                         model = NULL,
                                         n_clusters = NULL,
+                                        cluster_centers = NULL,
                                         linkage = NULL,
                                         labels = NULL
                                       ),
                                       public = list(
-                                        # "ward.D", "ward.D2", "single", "complete", "average" (= UPGMA), "mcquitty" (= WPGMA), "median" (= WPGMC) or "centroid" (= UPGMC).
+                                        #' @description Creates a new instance of R6 Class of HierarchicalClustering
+                                        #'
+                                        #' @examples
+                                        #' hc <- HierarchicalClustering$new()
+                                        #' hc <- HierarchicalClustering$new(n_clusters = 10)
+                                        #' hc <- HierarchicalClustering$new(n_clusters = 10, linkage = "complete")
                                         initialize = function(linkage = "ward.D2", n_clusters = 8){
                                           private$linkage <- linkage
                                           private$n_clusters <- n_clusters
                                         },
+                                        #' @description Perform hierarchical clustering on a data matrix.
+                                        #'
+                                        #' @param X numeric matrix of data, or an object that can be coerced to such a matrix (such as a numeric vector or a data frame with all numeric columns).
+                                        #'
+                                        #' @return Fitted R6 class of HierarchicalClustering() that has 'labels' attribute
+                                        #'
+                                        #' @examples
+                                        #' data(abalone)
+                                        #' hc <- HierarchicalClustering$new()
+                                        #' hc$fit(abalone)
                                         fit = function(X){
-                                          private$model <- stats::hclust(dist(X))
-                                          # cut_tree <- cutree(private$model, k = private$n_clusters)
-                                          # indexes <- names(cut_tree)
-                                          private$labels <- private$model$labels
+                                          private$model <- stats::hclust(dist(X), method = private$linkage)
+                                          private$labels <- unname(cutree(private$model, k = private$n_clusters))
                                           invisible(self)
                                         },
+                                        #' @description Auxiliary function returning the cluster centers
+                                        #' @examples
+                                        #' print(hc$get_cluster_centers())
+                                        get_cluster_centers = function(){
+                                          return(private$cluster_centers)
+                                        },
+                                        #' @description Auxiliary function returning a vector of integers (from 1:k) indicating the cluster to which each point is allocated.
+                                        #' @examples
+                                        #' print(hc$get_labels())
                                         get_labels = function(){
                                           return(private$labels)
-                                        },
-                                        get_model = function(){
-                                          return(private$model)
                                         }
                                       ))
 
@@ -1913,7 +1939,7 @@ test <- function(data = abalone) {
   # })
 
   # Now Selecting 70% of data as sample from total 'n' rows of the data
-  split_list <- train_test_split(data, test_size =  0.3)
+  split_list <- train_test_split(data, test_size =  0.3, random_state = 1)
   X_train <- split_list[[1]]
   X_test <- split_list[[2]]
   y_train <- split_list[[3]]
@@ -1924,21 +1950,19 @@ test <- function(data = abalone) {
   # y_train <- data[1:400,y_index]
   # X_test <- as.matrix(data[401:nrow(data),-y_index])
   # y_test <- data[401:nrow(data),y_index]
-  data <- c(1,2,3, 9, 10, 11)
-  hc <- HierarchicalClustering$new(linkage= "ward.D", n_clusters = 2)
-  hc$fit(data)
-  labels <- hc$get_model()
-  print(labels)
-  # tr <- cutree(hc$get_model(), k = 10)
-  # print(sort(names(tr)))
+
   # model <- SVR$new()
   # preds <- model$fit(X_train, y_train)$predict(X_test)
   # print(head(matrix(c(y_test, preds), ncol = 2)))
   # mape <- MLmetrics::MAPE(preds, y_test)
   # cat("MAPE: ", mape, "\n")
 
+  hc <- KMeans$new()
+  hc$fit(X_train)
+  hc$set_random_state(5)
+
   # cat("Total number of training samples: ", nrow(X_train), "\n")
-  # LESS <- LESSRegressor$new(global_estimator = KNeighborsRegressor$new(k=5))
+  # LESS <- LESSRegressor$new(cluster_method = HierarchicalClustering$new())
   # preds <- LESS$fit(X_train, y_train)$predict(X_test)
   # print(LESS)
   # print(head(matrix(c(y_test, preds), ncol = 2)))
