@@ -1171,6 +1171,40 @@ comparison_plot = function(X, y, model_list){
   }
 }
 
+#' @title Get Functions
+#'
+#' @description Prints the available regressors, clustering methods, tree functions and helper functions within LESS package.
+#'
+#' @export
+#'
+#' @examples
+#' get_functions()
+get_functions = function(){
+  regressor_list <- c("DecisionTreeRegressor", "KNeighborsRegressor", "LESSRegressor", "LinearRegression", "RandomForestRegressor", "SVR")
+  clustering_list <- c("HierarchicalClustering", "KMeans")
+  tree_list <- c("CoverTree", "KDTree")
+  helper_function_list <- c("laplacian", "rbf", "train_test_split")
+  cat("Regressors within LESS Package:", "\n")
+  for(reg in regressor_list){
+    cat("-", reg, "\n")
+  }
+  cat("\n")
+  cat("Clustering Methods within LESS Package:", "\n")
+  for(clust in clustering_list){
+    cat("-", clust, "\n")
+  }
+  cat("\n")
+  cat("Tree Functions within LESS Package:", "\n")
+  for(tree in tree_list){
+    cat("-", tree, "\n")
+  }
+  cat("\n")
+  cat("Helper functions within LESS Package:", "\n")
+  for(help in helper_function_list){
+    cat("-", help, "\n")
+  }
+}
+
 
 ###################
 
@@ -2003,21 +2037,23 @@ testFunc <- function(data = abalone) {
   # mape <- MLmetrics::MAPE(preds, y_test)
   # cat("MAPE: ", mape, "\n")
 
-  cat("Total number of training samples: ", nrow(X_train), "\n")
-  LESS <- LESSRegressor$new(random_state = 1, tree_method = function(data) CoverTree$new(X=data))
-  preds <- LESS$fit(X_train, y_train)$predict(X_test)
-  print(LESS)
-  print(head(matrix(c(y_test, preds), ncol = 2)))
-  mape <- MLmetrics::MAPE(preds, y_test)
-  cat("MAPE: ", mape, "\n")
+  # cat("Total number of training samples: ", nrow(X_train), "\n")
+  # LESS <- LESSRegressor$new(random_state = 1, tree_method = function(data) CoverTree$new(X=data))
+  # preds <- LESS$fit(X_train, y_train)$predict(X_test)
+  # print(LESS)
+  # print(head(matrix(c(y_test, preds), ncol = 2)))
+  # mape <- MLmetrics::MAPE(preds, y_test)
+  # cat("MAPE: ", mape, "\n")
+  #
+  # cat("Total number of training samples: ", nrow(X_train), "\n")
+  # LESS <- LESSRegressor$new(random_state = 1)
+  # preds <- LESS$fit(X_train, y_train)$predict(X_test)
+  # print(LESS)
+  # print(head(matrix(c(y_test, preds), ncol = 2)))
+  # mape <- MLmetrics::MAPE(preds, y_test)
+  # cat("MAPE: ", mape, "\n")
 
-  cat("Total number of training samples: ", nrow(X_train), "\n")
-  LESS <- LESSRegressor$new(random_state = 1)
-  preds <- LESS$fit(X_train, y_train)$predict(X_test)
-  print(LESS)
-  print(head(matrix(c(y_test, preds), ncol = 2)))
-  mape <- MLmetrics::MAPE(preds, y_test)
-  cat("MAPE: ", mape, "\n")
+  get_functions()
 
 }
 
