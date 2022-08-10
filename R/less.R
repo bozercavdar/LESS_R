@@ -1137,6 +1137,13 @@ check_X_y = function(X, y){
   return(list(X, y))
 }
 
+getMode <- function(v) {
+  tab <- table(v)[which.max(table(v))]
+  mode <- as.integer(names(tab))
+  count <- unname(tab)
+  return(c(mode, count))
+}
+
 #' @title Synthetic Sine Curve
 #'
 #' @description A simple function to generate n_samples from sine curve in the range (-10, 10) with some amplitude.
@@ -1153,7 +1160,7 @@ synthetic_sine_curve = function(n_samples=200) {
     X[i] <- xran
     y[i] <- 10*sin(xran) + 2.5*rnorm(1)
   }
-
+  dev.new(width=960, height=540, unit = "px", noRStudioGD = TRUE)
   plot(xvals, 10*sin(xvals), type = "l", col="red", ylab="",yaxt="n", xlab="",xaxt="n")
   par(new=TRUE)
   plot(X, y, pch = 19, col="blue",  ylab="",yaxt="n", xlab="",xaxt="n")
@@ -2015,14 +2022,276 @@ LESSRegressor <- R6::R6Class(classname = "LESSRegressor",
                                  return(yhat)
                                }
                              ))
+LESSBinaryClassifier <- R6::R6Class(classname = "LESSBinaryClassifier",
+                                    inherit = LESSBase,
+                                    private = list(
+                                      frac = NULL,
+                                      n_neighbors = NULL,
+                                      n_subsets = NULL,
+                                      n_replications = NULL,
+                                      d_normalize = NULL,
+                                      val_size = NULL,
+                                      random_state = NULL,
+                                      tree_method = NULL,
+                                      cluster_method = NULL,
+                                      local_estimator = NULL,
+                                      global_estimator = NULL,
+                                      distance_function = NULL,
+                                      scaling = NULL,
+                                      warnings = NULL,
+                                      rng = NULL,
+                                      yorg = NULL
+                                    ),
+                                    public = list(
+                                      initialize = function(frac = NULL, n_neighbors = NULL, n_subsets = NULL, n_replications = 20, d_normalize = TRUE, val_size = NULL,
+                                                            random_state = NULL, tree_method = function(X) KDTree$new(X), cluster_method = NULL,
+                                                            local_estimator = LinearRegression$new(), global_estimator = DecisionTreeRegressor$new(), distance_function = NULL,
+                                                            scaling = TRUE, warnings = TRUE) {
+                                        private$frac = frac
+                                        private$n_replications = n_replications
+                                        private$random_state = random_state
+                                        private$n_subsets = n_subsets
+                                        private$n_neighbors = n_neighbors
+                                        private$local_estimator = local_estimator
+                                        private$d_normalize = d_normalize
+                                        private$global_estimator = global_estimator
+                                        private$scaling = scaling
+                                        private$cluster_method = cluster_method
+                                        private$distance_function = distance_function
+                                        private$rng = RandomGenerator$new(random_state = private$random_state)
+                                        private$warnings = warnings
+                                        private$val_size = val_size
+                                        private$tree_method = tree_method
+                                        private$yorg = NULL
+                                      },
+                                      fit = function(X, y){
+                                        # Check that X and y have correct shape
+                                        X_y_list <- check_X_y(X, y)
+                                        X <- X_y_list[[1]]
+                                        y <- X_y_list[[2]]
 
-###########################
+                                        # Original labels
+                                        private$yorg <- unique(y)
 
-sine_data_list <- synthetic_sine_curve()
-X_sine <- sine_data_list[[1]]
-y_sine <- sine_data_list[[2]]
-synthetic_sine_data <- cbind(X_sine, y_sine)
+                                        if(length(private$yorg) != 2){
+                                          stop("LESSBinaryClassifier works only with two labels. Please try LESSClassifier.")
+                                        }
 
+                                        # Convert to binary labels
+                                        ymin1 <- y == private$yorg[1]
+                                        ypls1 <- y == private$yorg[2]
+                                        y[ymin1] <- -1
+                                        y[ypls1] <- 1
+
+                                        private$set_local_attributes()
+
+                                        if(!is.null(private$val_size)){
+                                          # Validation set is used for global estimation
+                                          if(length(private$cluster_method) == 0){
+                                            private$fitval(X, y)
+                                          }
+                                          else{
+                                            private$fitvalc(X, y)
+                                          }
+                                        }
+                                        else{
+                                          # Validation set is not used for global estimation
+                                          if(length(private$cluster_method) == 0){
+                                            private$fitnoval(X, y)
+                                          }
+                                          else{
+                                            private$fitnovalc(X, y)
+                                          }
+                                        }
+
+                                        private$isFitted <- TRUE
+                                        invisible(self)
+                                      },
+                                      predict_proba = function(X0){
+                                        check_is_fitted(self)
+                                        # Input validation
+                                        check_matrix(X0)
+
+                                        len_X0 <- nrow(X0)
+                                        yhat <- matrix(0, len_X0, private$n_replications)
+                                        predprobs <- matrix(0, len_X0, 2)
+                                        for(i in 1:self$n_replications){
+                                          # Get the fitted global and local estimators
+                                          global_model <- private$replications[[i]]$global_estimator
+                                          local_models <- private$replications[[i]]$local_estimators
+
+                                          if(length(private$cluster_method) == 0){
+                                            n_subsets <- private$n_subsets
+                                          }else{
+                                            n_subsets <- private$n_subsets[[i]]
+                                          }
+
+                                          dists <- matrix(0, len_X0, n_subsets)
+                                          predicts <- matrix(0, len_X0, n_subsets)
+                                          for(j in 1:n_subsets){
+                                            local_center <- local_models[[j]]$center
+                                            local_model <- local_models[[j]]$estimator
+                                            predicts[, j] <- local_model$predict(X0)
+
+                                            if(is.null(c(private$distance_function))) {
+                                              dists[, j] <- rbf(X0, local_center, 1.0/(n_subsets ^ 2.0))
+                                            }else {
+                                              dists[, j] <- private$distance_function(X0, local_center)
+                                            }
+                                          }
+
+                                          # Normalize the distances from samples to the local subsets
+                                          if(private$d_normalize) {
+                                            denom <- rowSums(dists)
+                                            denom[denom < 1e-08] <- 1e-08
+                                            dists <- t(t(dists)/denom)
+                                          }
+
+                                          Z0 <- dists * predicts
+                                          if(private$scaling){
+                                            Z0 <- private$replications[[i]]$sc_object$transform(Z0)
+                                          }
+
+                                          if(length(global_model) != 0){
+                                            yhat[,i] <- as.integer(global_model$predict(Z0))
+                                            # Convert to 0-1
+                                            yhat[,i] <- (yhat[,i] + 1)/2
+
+                                          }else{
+                                            rowSum <- rowSums(Z0)
+                                            yhat[rowSum < 0, i] = 0
+                                            yhat[rowSum >= 0, i] = 1
+                                          }
+                                        }
+
+                                        mode_matrix <- t(apply(yhat, 1, getMode))
+                                        yhat <- mode_matrix[,1]
+                                        cnt <- mode_matrix[,2]
+                                        yhat0 <- yhat == 0
+                                        yhat1 <- yhat == 1
+                                        predprobs[yhat0, 1] <- cnt[yhat0]
+                                        predprobs[yhat0, 2] <- private$n_replications - cnt[yhat0]
+                                        predprobs[yhat1, 2] <- cnt[yhat1]
+                                        predprobs[yhat1, 1] <- private$n_replications - cnt[yhat1]
+
+                                        predprobs <- predprobs / private$n_replications
+
+                                        return(predprobs)
+                                      }
+                                    ))
+
+OneVsRestClassifier <- R6::R6Class(classname = "OneVsRestClassifier",
+                                   private = list(
+                                     estimator = NULL
+                                   ),
+                                   public = list(
+                                     initialize = function(estimator = NULL){
+                                       private$estimator = estimator
+                                     },
+                                     fit = function(X, y){
+                                       uniqc <- sort(unique(y))
+                                       class_len <- length(uniqc)
+                                       class_matrix <- matrix(0, class_len, length(y))
+                                       for(i in 1:class_len){
+                                         class_matrix[i,y==uniqc[i]] <- 1
+                                       }
+                                       for(i in 1:class_len){
+                                         private$estimator$fit(X, class_matrix[i,])
+                                         probs <- private$estimator$predict_proba(X)
+
+                                       }
+                                     }
+                                   ))
+
+LESSClassifier <- R6::R6Class(classname = "LESSClassifier",
+                              inherit = LESSBase,
+                              private = list(
+                                frac = NULL,
+                                n_neighbors = NULL,
+                                n_subsets = NULL,
+                                n_replications = NULL,
+                                d_normalize = NULL,
+                                val_size = NULL,
+                                random_state = NULL,
+                                tree_method = NULL,
+                                cluster_method = NULL,
+                                local_estimator = NULL,
+                                global_estimator = NULL,
+                                distance_function = NULL,
+                                scaling = NULL,
+                                warnings = NULL,
+                                rng = NULL,
+                                multiclass = NULL,
+                                bclassifier = NULL,
+                                strategy = NULL,
+                                set_strategy = function(n_classes){
+                                  if(n_classes == 2){
+                                    private$strategy <- NULL
+                                  }else if(private$multiclass == "ovr"){
+                                    private$strategy <- NULL
+                                  }else if(private$multiclass == "ovo"){
+                                    private$strategy <- NULL
+                                  }else if(private$multiclass == "occ"){
+                                    private$strategy <- NULL
+                                  }else{
+                                    private$strategy <- NULL
+                                    LESSWarn$new("LESSClassifier works only with one of the following options:
+                                                  (1) 'ovr' : OneVsRestClassifier (default),
+                                                  (2) 'ovo' : OneVsOneClassifier,
+                                                  (3) 'occ' : OutputCodeClassifier,
+                                                  Switching to 'ovr' ...", private$warnings)
+                                  }
+                                }
+                              ),
+                              public = list(
+                                initialize = function(frac = NULL, n_neighbors = NULL, n_subsets = NULL, n_replications = 20, d_normalize = TRUE, val_size = NULL,
+                                                      random_state = NULL, tree_method = function(X) KDTree$new(X), cluster_method = NULL,
+                                                      local_estimator = LinearRegression$new(), global_estimator = DecisionTreeRegressor$new(), distance_function = NULL,
+                                                      scaling = TRUE, warnings = TRUE, multiclass = "ovr") {
+                                  private$frac = frac
+                                  private$n_replications = n_replications
+                                  private$random_state = random_state
+                                  private$n_subsets = n_subsets
+                                  private$n_neighbors = n_neighbors
+                                  private$local_estimator = local_estimator
+                                  private$d_normalize = d_normalize
+                                  private$global_estimator = global_estimator
+                                  private$scaling = scaling
+                                  private$cluster_method = cluster_method
+                                  private$distance_function = distance_function
+                                  private$rng = RandomGenerator$new(random_state = private$random_state)
+                                  private$warnings = warnings
+                                  private$val_size = val_size
+                                  private$tree_method = tree_method
+                                  private$multiclass = multiclass
+                                  private$bclassifier = LESSBinaryClassifier$new(frac = private$frac, n_neighbors = private$n_neighbors, n_subsets = private$n_subsets,
+                                                                                 n_replications = private$n_replications, d_normalize = private$d_normalize,
+                                                                                 val_size = private$val_size, random_state = private$random_state, tree_method = private$tree_method,
+                                                                                 cluster_method = private$cluster_method, local_estimator = private$local_estimator,
+                                                                                 global_estimator = private$local_estimator, distance_function = private$distance_function,
+                                                                                 scaling = private$scaling, warnings = private$warnings)
+                                },
+                                fit = function(X, y){
+                                  if(private$scaling){
+                                    private$scobject <- StandardScaler$new()
+                                    X <- private$scobject$fit_transform(X)
+                                  }
+
+                                  n_classes <- length(unique(y))
+                                  private$set_strategy(n_classes)
+                                  private$strategy$fit(X, y)
+                                  #private$update_params()
+                                  private$isFitted <- TRUE
+                                  invisible(self)
+                                },
+                                predict = function(X0){
+                                  if(private$scaling){
+                                    X0 <- private$scobject$transform(X0)
+                                  }
+                                  private$strategy$predict(X0)
+                                }
+                              )
+                              )
 #########################
 
 testFunc <- function(data = abalone) {
@@ -2065,8 +2334,16 @@ testFunc <- function(data = abalone) {
   # print(head(matrix(c(y_test, preds), ncol = 2)))
   # mape <- MLmetrics::MAPE(preds, y_test)
   # cat("MAPE: ", mape, "\n")
-
-  synthetic_sine_curve()
+  labels <- c(4,5,4,4,5,5,5,4,5,5)
+  testdata <- concrete[1:10,]
+  testdata[,ncol(testdata)] <- labels
+  X <- as.matrix(testdata[,-ncol(testdata)])
+  y <- as.matrix(testdata[,ncol(testdata)])
+  print(cbind(y, X))
+  bc <- LESSBinaryClassifier$new()
+  bc$fit(X, y)
+  preds <- bc$predict_proba(testdata[,-1])
+  print(preds)
 
 }
 
