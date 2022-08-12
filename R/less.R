@@ -1376,6 +1376,11 @@ LESSBase <- R6::R6Class(classname = "LESSBase",
                             for (i in 1:nrow(neighbor_indices_list)) {
                               Xneighbors <- as.matrix(X[neighbor_indices_list[i, ],])
                               yneighbors <- as.matrix(y[neighbor_indices_list[i, ]])
+                              if(nrow(yneighbors) == 1){
+                                # if there is only one sample in a group,
+                                # prevent Xneighbors being a (n,1) dimensional matrix
+                                Xneighbors <- t(Xneighbors)
+                              }
 
                               # Centroid is used as the center of the local sample set
                               local_center <- colMeans(Xneighbors)
@@ -1469,6 +1474,11 @@ LESSBase <- R6::R6Class(classname = "LESSBase",
                             for (i in 1:nrow(neighbor_indices_list)) {
                               Xneighbors <- as.matrix(X_train[neighbor_indices_list[i, ],])
                               yneighbors <- as.matrix(y_train[neighbor_indices_list[i, ]])
+                              if(nrow(yneighbors) == 1){
+                                # if there is only one sample in a group,
+                                # prevent Xneighbors being a (n,1) dimensional matrix
+                                Xneighbors <- t(Xneighbors)
+                              }
 
                               # Centroid is used as the center of the local sample set
                               local_center <- colMeans(Xneighbors)
@@ -2071,7 +2081,7 @@ LESSBinaryClassifier <- R6::R6Class(classname = "LESSBinaryClassifier",
                                         y <- X_y_list[[2]]
 
                                         # Original labels
-                                        private$yorg <- unique(y)
+                                        private$yorg <- sort(unique(y))
 
                                         if(length(private$yorg) != 2){
                                           stop("LESSBinaryClassifier works only with two labels. Please try LESSClassifier.")
@@ -2115,7 +2125,7 @@ LESSBinaryClassifier <- R6::R6Class(classname = "LESSBinaryClassifier",
                                         len_X0 <- nrow(X0)
                                         yhat <- matrix(0, len_X0, private$n_replications)
                                         predprobs <- matrix(0, len_X0, 2)
-                                        for(i in 1:self$n_replications){
+                                        for(i in 1:private$n_replications){
                                           # Get the fitted global and local estimators
                                           global_model <- private$replications[[i]]$global_estimator
                                           local_models <- private$replications[[i]]$local_estimators
@@ -2134,7 +2144,7 @@ LESSBinaryClassifier <- R6::R6Class(classname = "LESSBinaryClassifier",
                                             predicts[, j] <- local_model$predict(X0)
 
                                             if(is.null(c(private$distance_function))) {
-                                              dists[, j] <- rbf(X0, local_center, 1.0/(n_subsets ^ 2.0))
+                                              dists[, j] <- rbf(as.matrix(X0), local_center, 1.0/(n_subsets ^ 2.0))
                                             }else {
                                               dists[, j] <- private$distance_function(X0, local_center)
                                             }
@@ -2182,24 +2192,35 @@ LESSBinaryClassifier <- R6::R6Class(classname = "LESSBinaryClassifier",
 
 OneVsRestClassifier <- R6::R6Class(classname = "OneVsRestClassifier",
                                    private = list(
-                                     estimator = NULL
+                                     estimator = NULL,
+                                     uniqc = NULL,
+                                     class_len = NULL,
+                                     estimator_list = NULL
                                    ),
                                    public = list(
                                      initialize = function(estimator = NULL){
                                        private$estimator = estimator
+                                       private$estimator_list = list()
                                      },
                                      fit = function(X, y){
-                                       uniqc <- sort(unique(y))
-                                       class_len <- length(uniqc)
-                                       class_matrix <- matrix(0, class_len, length(y))
-                                       for(i in 1:class_len){
-                                         class_matrix[i,y==uniqc[i]] <- 1
+                                       private$uniqc <- sort(unique(y))
+                                       private$class_len <- length(private$uniqc)
+                                       class_matrix <- matrix(0, private$class_len, length(y))
+                                       for(i in 1:private$class_len){
+                                         class_matrix[i,y==private$uniqc[i]] <- 1
+                                         private$estimator_list <- append(private$estimator_list, private$estimator$fit(X, class_matrix[i,])$clone())
                                        }
-                                       for(i in 1:class_len){
-                                         private$estimator$fit(X, class_matrix[i,])
-                                         probs <- private$estimator$predict_proba(X)
-
+                                       invisible(self)
+                                     },
+                                     predict = function(X0){
+                                       data <- prepareXset(X0)
+                                       class_probs <- matrix(0, private$class_len, nrow(data))
+                                       for(i in 1:private$class_len){
+                                         probs <- private$estimator_list[[i]]$predict_proba(data)
+                                         class_probs[i,] <- probs[,2]
                                        }
+                                       class_preds <- private$uniqc[apply(class_probs, 2, which.max)]
+                                       return(class_preds)
                                      }
                                    ))
 
@@ -2226,15 +2247,15 @@ LESSClassifier <- R6::R6Class(classname = "LESSClassifier",
                                 strategy = NULL,
                                 set_strategy = function(n_classes){
                                   if(n_classes == 2){
-                                    private$strategy <- NULL
+                                    private$strategy <- OneVsRestClassifier$new(estimator = LESSBinaryClassifier$new())
                                   }else if(private$multiclass == "ovr"){
-                                    private$strategy <- NULL
+                                    private$strategy <- OneVsRestClassifier$new(estimator = LESSBinaryClassifier$new())
                                   }else if(private$multiclass == "ovo"){
                                     private$strategy <- NULL
                                   }else if(private$multiclass == "occ"){
                                     private$strategy <- NULL
                                   }else{
-                                    private$strategy <- NULL
+                                    private$strategy <- OneVsRestClassifier$new(estimator = LESSBinaryClassifier$new())
                                     LESSWarn$new("LESSClassifier works only with one of the following options:
                                                   (1) 'ovr' : OneVsRestClassifier (default),
                                                   (2) 'ovo' : OneVsOneClassifier,
@@ -2334,17 +2355,20 @@ testFunc <- function(data = abalone) {
   # print(head(matrix(c(y_test, preds), ncol = 2)))
   # mape <- MLmetrics::MAPE(preds, y_test)
   # cat("MAPE: ", mape, "\n")
-  labels <- c(4,5,4,4,5,5,5,4,5,5)
-  testdata <- concrete[1:10,]
-  testdata[,ncol(testdata)] <- labels
-  X <- as.matrix(testdata[,-ncol(testdata)])
-  y <- as.matrix(testdata[,ncol(testdata)])
-  print(cbind(y, X))
-  bc <- LESSBinaryClassifier$new()
-  bc$fit(X, y)
-  preds <- bc$predict_proba(testdata[,-1])
-  print(preds)
 
+  # labels <- c(6,5,4,6,5,5,4,4,5,5)
+  # testdata <- concrete[1:10,-3]
+  # testdata[,ncol(testdata)] <- labels
+  # X <- as.matrix(testdata[,-ncol(testdata)])
+  # y <- as.matrix(testdata[,ncol(testdata)])
+  data <- segmentationData[,-c(1,2)]
+  X <- data[, -1]
+  y <- data[, 1]
+
+  str <- LESSClassifier$new()
+  preds <- str$fit(X, y)$predict(X)
+  example <- caret::confusionMatrix(data=factor(preds), reference = factor(y))
+  print(example$table)
 }
 
 comparison = function(dataset = synthetic_sine_data){
