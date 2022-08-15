@@ -2219,7 +2219,53 @@ OneVsRestClassifier <- R6::R6Class(classname = "OneVsRestClassifier",
                                          probs <- private$estimator_list[[i]]$predict_proba(data)
                                          class_probs[i,] <- probs[,2]
                                        }
-                                       class_preds <- private$uniqc[apply(class_probs, 2, which.max)]
+                                       class_preds <- private$uniqc[max.col(t(class_probs))]
+                                       return(class_preds)
+                                     }
+                                   ))
+
+OneVsOneClassifier <- R6::R6Class(classname = "OneVsOneClassifier",
+                                   private = list(
+                                     estimator = NULL,
+                                     uniqc = NULL,
+                                     class_len = NULL,
+                                     estimator_list = NULL,
+                                     combinations = NULL
+                                   ),
+                                   public = list(
+                                     initialize = function(estimator = NULL){
+                                       private$estimator = estimator
+                                       private$estimator_list = list()
+                                     },
+                                     fit = function(X, y){
+                                       private$uniqc <- sort(unique(y))
+                                       private$class_len <- length(private$uniqc)
+                                       private$combinations = combn(private$uniqc, 2)
+                                       class_matrix <- matrix(NA, ncol(private$combinations), length(y))
+                                       for(i in 1:ncol(private$combinations)){
+                                         class_matrix[i,y==private$combinations[1,i]] <- 0
+                                         class_matrix[i,y==private$combinations[2,i]] <- 1
+                                         private$estimator_list <- append(private$estimator_list,
+                                                                          private$estimator$fit(as.matrix(X[-which(is.na(class_matrix[i,])),]),
+                                                                                                as.matrix(na.omit(class_matrix[i,])))$clone())
+                                       }
+                                       invisible(self)
+                                     },
+                                     predict = function(X0){
+                                       data <- prepareXset(X0)
+                                       win_counts <- matrix(0, private$class_len, nrow(data))
+                                       class_probs <- matrix(0, private$class_len, nrow(data))
+                                       for(i in 1:ncol(private$combinations)){
+                                         probs <- private$estimator_list[[i]]$predict_proba(data)
+                                         classes <- private$combinations[,i]
+                                         pred_index <- max.col(probs)
+                                         pred <- classes[pred_index]
+                                         for(c in 1:nrow(data)){
+                                           win_counts[private$uniqc == pred[c],c] <-  win_counts[private$uniqc == pred[c],c] + 1
+                                         }
+                                       }
+                                       print(win_counts)
+                                       class_preds <- private$uniqc[max.col(t(win_counts))]
                                        return(class_preds)
                                      }
                                    ))
@@ -2251,7 +2297,7 @@ LESSClassifier <- R6::R6Class(classname = "LESSClassifier",
                                   }else if(private$multiclass == "ovr"){
                                     private$strategy <- OneVsRestClassifier$new(estimator = LESSBinaryClassifier$new())
                                   }else if(private$multiclass == "ovo"){
-                                    private$strategy <- NULL
+                                    private$strategy <- OneVsOneClassifier$new(estimator = LESSBinaryClassifier$new())
                                   }else if(private$multiclass == "occ"){
                                     private$strategy <- NULL
                                   }else{
@@ -2361,14 +2407,23 @@ testFunc <- function(data = abalone) {
   # testdata[,ncol(testdata)] <- labels
   # X <- as.matrix(testdata[,-ncol(testdata)])
   # y <- as.matrix(testdata[,ncol(testdata)])
-  data <- segmentationData[,-c(1,2)]
-  X <- data[, -1]
-  y <- data[, 1]
 
-  str <- LESSClassifier$new()
-  preds <- str$fit(X, y)$predict(X)
-  example <- caret::confusionMatrix(data=factor(preds), reference = factor(y))
-  print(example$table)
+  data <- iris
+  data <- read.table(file.choose(), sep = ",")
+  # data <- data[,-c(2)]
+  # data <- data[,1:30]
+  print(head(data))
+
+  split_list <- train_test_split(data, test_size =  0.3, y_index = 1)
+  X_train <- split_list[[1]]
+  X_test <- split_list[[2]]
+  y_train <- split_list[[3]]
+  y_test <- split_list[[4]]
+
+  str <- LESSClassifier$new(multiclass = "ovo")
+  preds <- str$fit(X_train, y_train)$predict(X_test)
+  example <- caret::confusionMatrix(data=factor(preds), reference = factor(y_test))
+  print(example)
 }
 
 comparison = function(dataset = synthetic_sine_data){
