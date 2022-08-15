@@ -2243,11 +2243,12 @@ OneVsOneClassifier <- R6::R6Class(classname = "OneVsOneClassifier",
                                        private$combinations = combn(private$uniqc, 2)
                                        class_matrix <- matrix(NA, ncol(private$combinations), length(y))
                                        for(i in 1:ncol(private$combinations)){
-                                         class_matrix[i,y==private$combinations[1,i]] <- 0
-                                         class_matrix[i,y==private$combinations[2,i]] <- 1
+                                         class_matrix[i,y==private$combinations[1,i]] <- 0 # convert the first class to 0
+                                         class_matrix[i,y==private$combinations[2,i]] <- 1 # convert the second class to 1
+                                         X_train <- as.matrix(X[-which(is.na(class_matrix[i,])),]) # omit the data points that belongs to other classes
+                                         y_train <- as.matrix(na.omit(class_matrix[i,])) # omit the data points that belongs to other classes
                                          private$estimator_list <- append(private$estimator_list,
-                                                                          private$estimator$fit(as.matrix(X[-which(is.na(class_matrix[i,])),]),
-                                                                                                as.matrix(na.omit(class_matrix[i,])))$clone())
+                                                                          private$estimator$fit(X_train, y_train)$clone())
                                        }
                                        invisible(self)
                                      },
@@ -2256,15 +2257,16 @@ OneVsOneClassifier <- R6::R6Class(classname = "OneVsOneClassifier",
                                        win_counts <- matrix(0, private$class_len, nrow(data))
                                        class_probs <- matrix(0, private$class_len, nrow(data))
                                        for(i in 1:ncol(private$combinations)){
-                                         probs <- private$estimator_list[[i]]$predict_proba(data)
-                                         classes <- private$combinations[,i]
-                                         pred_index <- max.col(probs)
-                                         pred <- classes[pred_index]
+                                         probs <- private$estimator_list[[i]]$predict_proba(data) # Probability estimates of each data point
+                                         classes <- private$combinations[,i] # two classes that is being compared
+                                         pred_index <- max.col(probs) # index of the class that has the higher probability for each data point
+                                         pred <- classes[pred_index] # predictions for each data point
                                          for(c in 1:nrow(data)){
+                                           # for each data point, increase the count the of winner class
                                            win_counts[private$uniqc == pred[c],c] <-  win_counts[private$uniqc == pred[c],c] + 1
                                          }
                                        }
-                                       print(win_counts)
+                                       # the class with the highest number of wins is the prediction
                                        class_preds <- private$uniqc[max.col(t(win_counts))]
                                        return(class_preds)
                                      }
