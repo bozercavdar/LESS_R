@@ -648,6 +648,36 @@ RandomGenerator <- R6::R6Class(classname = "RandomGenerator",
                                  }
                                ))
 
+ConstantPredictor <- R6::R6Class(classname = "ConstantPredictor",
+                                 inherit = SklearnEstimator,
+                                 private = list(
+                                   isFitted = FALSE,
+                                   y = NULL
+                                 ),
+                                 public = list(
+                                   fit = function(X, y){
+                                     private$y <- unique(y)
+                                     private$isFitted <- TRUE
+                                     invisible(self)
+                                   },
+                                   predict = function(X0){
+                                     return(rep(private$y, nrow(X0)))
+                                   },
+                                   predict_proba= function(X0){
+                                     check_is_fitted(self)
+                                     # Input validation
+                                     check_matrix(X0)
+                                     len_X0 <- nrow(X0)
+                                     predprobs <- matrix(0, len_X0, 2)
+                                     predprobs[, 1] <- rep(1 - private$y, len_X0)
+                                     predprobs[, 2] <- rep(private$y, len_X0)
+                                     return(predprobs)
+                                   },
+                                   get_isFitted = function(){
+                                     return(private$isFitted)
+                                   }
+                                 ))
+
 LESSWarn <- R6::R6Class(classname = "LESSWarn",
                         public = list(
                           initialize = function(msg = "", flag = TRUE){
@@ -2272,6 +2302,79 @@ OneVsOneClassifier <- R6::R6Class(classname = "OneVsOneClassifier",
                                      }
                                    ))
 
+OutputCodeClassifier <- R6::R6Class(classname = "OutputCodeClassifier",
+                                   private = list(
+                                     estimator = NULL,
+                                     uniqc = NULL,
+                                     class_len = NULL,
+                                     estimator_list = NULL,
+                                     code_size = NULL,
+                                     code_book = NULL,
+                                     random_state = NULL
+                                   ),
+                                   public = list(
+                                     initialize = function(estimator = NULL, code_size = 1.5, random_state = NULL){
+                                       private$estimator = estimator
+                                       private$estimator_list = list()
+                                       private$code_size = code_size
+                                       private$random_state = random_state
+                                     },
+                                     fit = function(X, y){
+                                       if(private$code_size <= 0){
+                                         stop(sprintf("code_size should be greater than 0, got %s", private$code_size))
+                                       }
+
+                                       #FIXME check if the estimator has decision_func or predict_p
+                                       private$uniqc <- sort(unique(y))
+                                       private$class_len <- length(private$uniqc)
+
+                                       if(private$class_len == 0){
+                                         stop("OutputCodeClassifier can not be fit when no class is present.")
+                                       }
+
+                                       code_size <- as.integer(private$class_len * private$code_size)
+
+                                       set.seed(private$random_state)
+                                       # create a code book
+                                       private$code_book <- matrix(runif(private$class_len * code_size), nrow = private$class_len)
+                                       private$code_book[private$code_book > 0.5] = 1
+                                       # this part is implemented directly for those estimators with predict_proba() function
+                                       private$code_book[private$code_book != 1] = 0
+
+                                       classes_index <- setNames(1:private$class_len, private$uniqc) # named vector with classnames and their indexes
+                                       Y <- matrix(0, length(y), code_size)
+                                       for (i in 1:length(y)) {
+                                         # for each data point (label), take the corresponding code_book row
+                                         Y[i,] <- private$code_book[classes_index[y[i]],]
+                                       }
+
+                                       for(i in 1:code_size){
+                                         if(length(unique(Y[,i])) == 1){
+                                           private$estimator_list <- append(private$estimator_list, ConstantPredictor$new()$fit(X, Y[,i])$clone())
+                                         }else{
+                                           private$estimator_list <- append(private$estimator_list,
+                                                                            private$estimator$fit(X, Y[,i])$clone())
+                                         }
+                                       }
+                                       invisible(self)
+                                     },
+                                     predict = function(X0){
+                                       data <- prepareXset(X0)
+                                       class_probs <- matrix(0, length(private$estimator_list), nrow(data))
+                                       for(i in 1:length(private$estimator_list)){
+                                         # take the positive class probability using each fitted estimator
+                                         probs <- private$estimator_list[[i]]$predict_proba(data)
+                                         class_probs[i,] <- probs[,2]
+                                       }
+                                       # calculate the distance matrix
+                                       distances <- pracma::distmat(t(class_probs), private$code_book)
+                                       # take the index of class which has the minimum distance
+                                       class_preds <- apply(distances, 1, which.min)
+
+                                       return(private$uniqc[class_preds])
+                                     }
+                                   ))
+
 LESSClassifier <- R6::R6Class(classname = "LESSClassifier",
                               inherit = LESSBase,
                               private = list(
@@ -2301,7 +2404,7 @@ LESSClassifier <- R6::R6Class(classname = "LESSClassifier",
                                   }else if(private$multiclass == "ovo"){
                                     private$strategy <- OneVsOneClassifier$new(estimator = LESSBinaryClassifier$new())
                                   }else if(private$multiclass == "occ"){
-                                    private$strategy <- NULL
+                                    private$strategy <- OutputCodeClassifier$new(estimator = LESSBinaryClassifier$new())
                                   }else{
                                     private$strategy <- OneVsRestClassifier$new(estimator = LESSBinaryClassifier$new())
                                     LESSWarn$new("LESSClassifier works only with one of the following options:
@@ -2411,18 +2514,19 @@ testFunc <- function(data = abalone) {
   # y <- as.matrix(testdata[,ncol(testdata)])
 
   data <- iris
-  data <- read.table(file.choose(), sep = ",")
+  # data <- read.table(file.choose(), sep = ",")
   # data <- data[,-c(2)]
   # data <- data[,1:30]
   print(head(data))
 
-  split_list <- train_test_split(data, test_size =  0.3, y_index = 1)
+  # split_list <- train_test_split(data, test_size =  0.3, y_index = 1)
+  split_list <- train_test_split(data, test_size =  0.3)
   X_train <- split_list[[1]]
   X_test <- split_list[[2]]
   y_train <- split_list[[3]]
   y_test <- split_list[[4]]
 
-  str <- LESSClassifier$new(multiclass = "ovo")
+  str <- LESSClassifier$new(multiclass = "occ")
   preds <- str$fit(X_train, y_train)$predict(X_test)
   example <- caret::confusionMatrix(data=factor(preds), reference = factor(y_test))
   print(example)
