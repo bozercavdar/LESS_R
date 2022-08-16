@@ -113,11 +113,20 @@ OutputCodeClassifier <- R6::R6Class(classname = "OutputCodeClassifier",
                                         code_size <- as.integer(private$class_len * private$code_size)
 
                                         set.seed(private$random_state)
+
                                         # create a code book
                                         private$code_book <- matrix(runif(private$class_len * code_size), nrow = private$class_len)
                                         private$code_book[private$code_book > 0.5] = 1
                                         # this part is implemented directly for those estimators with predict_proba() function
                                         private$code_book[private$code_book != 1] = 0
+
+                                        #if the rows of the code book are not unique, recreate the code book
+                                        while(nrow(unique(private$code_book)) != private$class_len) {
+                                          private$code_book <- matrix(runif(private$class_len * code_size), nrow = private$class_len)
+                                          private$code_book[private$code_book > 0.5] = 1
+                                          # this part is implemented directly for those estimators with predict_proba() function
+                                          private$code_book[private$code_book != 1] = 0
+                                        }
 
                                         classes_index <- setNames(1:private$class_len, private$uniqc) # named vector with classnames and their indexes
                                         Y <- matrix(0, length(y), code_size)
@@ -152,7 +161,27 @@ OutputCodeClassifier <- R6::R6Class(classname = "OutputCodeClassifier",
                                         return(private$uniqc[class_preds])
                                       }
                                     ))
-
+#' @title LESSBinaryClassifier
+#'
+#' @description Auxiliary binary classifier for Learning with Subset Selection (LESS)
+#'
+#' @param frac fraction of total samples used for the number of neighbors (default is 0.05)
+#' @param n_neighbors number of neighbors (default is NULL)
+#' @param n_subsets number of subsets (default is NULL)
+#' @param n_replications number of replications (default is 20)
+#' @param d_normalize distance normalization (default is TRUE)
+#' @param val_size percentage of samples used for validation (default is NULL - no validation)
+#' @param random_state initialization of the random seed (default is NULL)
+#' @param tree_method method used for constructing the nearest neighbor tree, e.g., less::KDTree (default)
+#' @param cluster_method method used for clustering the subsets, e.g., less::KMeans (default is NULL)
+#' @param local_estimator estimator for the local models (default is less::LinearRegression)
+#' @param global_estimator estimator for the global model (default is less::DecisionTreeRegressor)
+#' @param distance_function distance function evaluating the distance from a subset to a sample,
+#' e.g., df(subset, sample) which returns a vector of distances (default is RBF(subset, sample, 1.0/n_subsets^2))
+#' @param scaling flag to normalize the input data (default is TRUE)
+#' @param warnings flag to turn on (TRUE) or off (FALSE) the warnings (default is TRUE)
+#'
+#' @return R6 class of LESSBinaryClassifier
 LESSBinaryClassifier <- R6::R6Class(classname = "LESSBinaryClassifier",
                                     inherit = LESSBase,
                                     private = list(
@@ -174,6 +203,7 @@ LESSBinaryClassifier <- R6::R6Class(classname = "LESSBinaryClassifier",
                                       yorg = NULL
                                     ),
                                     public = list(
+                                      #' @description Creates a new instance of R6 Class of LESSBinaryClassifier
                                       initialize = function(frac = NULL, n_neighbors = NULL, n_subsets = NULL, n_replications = 20, d_normalize = TRUE, val_size = NULL,
                                                             random_state = NULL, tree_method = function(X) KDTree$new(X), cluster_method = NULL,
                                                             local_estimator = LinearRegression$new(), global_estimator = DecisionTreeRegressor$new(), distance_function = NULL,
@@ -195,6 +225,18 @@ LESSBinaryClassifier <- R6::R6Class(classname = "LESSBinaryClassifier",
                                         private$tree_method = tree_method
                                         private$yorg = NULL
                                       },
+                                      #' @description
+                                      #' Dummy fit function that calls the proper method according to validation and clustering parameters
+                                      #' Options are:
+                                      #' - Default fitting (no validation set, no clustering)
+                                      #' - Fitting with validation set (no clustering)
+                                      #' - Fitting with clustering (no) validation set)
+                                      #' - Fitting with validation set and clustering
+                                      #'
+                                      #' @param X 2D matrix or dataframe that includes predictors
+                                      #' @param y 1D vector or (n,1) dimensional matrix/dataframe that includes response variables
+                                      #'
+                                      #' @return Fitted R6 Class of LESSBinaryClassifier
                                       fit = function(X, y){
                                         # Check that X and y have correct shape
                                         X_y_list <- check_X_y(X, y)
@@ -238,6 +280,10 @@ LESSBinaryClassifier <- R6::R6Class(classname = "LESSBinaryClassifier",
                                         private$isFitted <- TRUE
                                         invisible(self)
                                       },
+                                      #' @description
+                                      #' Prediction probabilities are evaluated for the test samples in X0
+                                      #'
+                                      #' @param X0 2D matrix or dataframe that includes predictors
                                       predict_proba = function(X0){
                                         check_is_fitted(self)
                                         # Input validation
@@ -311,6 +357,29 @@ LESSBinaryClassifier <- R6::R6Class(classname = "LESSBinaryClassifier",
                                       }
                                     ))
 
+#' @title LESSClassifier
+#'
+#' @description Classifier for Learning with Subset Selection (LESS)
+#'
+#' @param frac fraction of total samples used for the number of neighbors (default is 0.05)
+#' @param n_neighbors number of neighbors (default is NULL)
+#' @param n_subsets number of subsets (default is NULL)
+#' @param n_replications number of replications (default is 20)
+#' @param d_normalize distance normalization (default is TRUE)
+#' @param val_size percentage of samples used for validation (default is NULL - no validation)
+#' @param random_state initialization of the random seed (default is NULL)
+#' @param tree_method method used for constructing the nearest neighbor tree, e.g., less::KDTree (default)
+#' @param cluster_method method used for clustering the subsets, e.g., less::KMeans (default is NULL)
+#' @param local_estimator estimator for the local models (default is less::LinearRegression)
+#' @param global_estimator estimator for the global model (default is less::DecisionTreeRegressor)
+#' @param distance_function distance function evaluating the distance from a subset to a sample,
+#' e.g., df(subset, sample) which returns a vector of distances (default is RBF(subset, sample, 1.0/n_subsets^2))
+#' @param scaling flag to normalize the input data (default is TRUE)
+#' @param warnings flag to turn on (TRUE) or off (FALSE) the warnings (default is TRUE)
+#' @param multiclass available strategies are 'ovr' (one-vs-rest, default), 'ovo' (one-vs-one), 'occ' (output-code-classifier) (default is 'ovr')
+#'
+#' @return R6 class of LESSClassifier
+#' @export
 LESSClassifier <- R6::R6Class(classname = "LESSClassifier",
                               inherit = LESSBase,
                               private = list(
@@ -352,6 +421,11 @@ LESSClassifier <- R6::R6Class(classname = "LESSClassifier",
                                 }
                               ),
                               public = list(
+                                #' @description Creates a new instance of R6 Class of LESSClassifier
+                                #'
+                                #' @examples
+                                #' lessclassifier <- LESSClassifier$new()
+                                #' lessclassifier <- LESSClassifier$new(multiclass = "ovo")
                                 initialize = function(frac = NULL, n_neighbors = NULL, n_subsets = NULL, n_replications = 20, d_normalize = TRUE, val_size = NULL,
                                                       random_state = NULL, tree_method = function(X) KDTree$new(X), cluster_method = NULL,
                                                       local_estimator = LinearRegression$new(), global_estimator = DecisionTreeRegressor$new(), distance_function = NULL,
@@ -379,6 +453,24 @@ LESSClassifier <- R6::R6Class(classname = "LESSClassifier",
                                                                                  global_estimator = private$local_estimator, distance_function = private$distance_function,
                                                                                  scaling = private$scaling, warnings = private$warnings)
                                 },
+                                #' @description
+                                #' Dummy fit function that calls the fit method of the multiclass strategy 'one-vs-rest'
+                                #'
+                                #' @param X 2D matrix or dataframe that includes predictors
+                                #' @param y 1D vector or (n,1) dimensional matrix/dataframe that includes response variables
+                                #'
+                                #' @return Fitted R6 Class of LESSClassifier
+                                #'
+                                #' @examples
+                                #' data(iris)
+                                #' split_list <- train_test_split(iris, test_size =  0.3)
+                                #' X_train <- split_list[[1]]
+                                #' X_test <- split_list[[2]]
+                                #' y_train <- split_list[[3]]
+                                #' y_test <- split_list[[4]]
+                                #'
+                                #' lessclassifier <- LESSClassifier$new()
+                                #' lessclassifier$fit(X_train, y_train)
                                 fit = function(X, y){
                                   if(private$scaling){
                                     private$scobject <- StandardScaler$new()
@@ -392,6 +484,18 @@ LESSClassifier <- R6::R6Class(classname = "LESSClassifier",
                                   private$isFitted <- TRUE
                                   invisible(self)
                                 },
+                                #' @description
+                                #' Dummy predict function that calls the predict method of the multiclass strategy 'one-vs-rest'
+                                #'
+                                #' @param X0 2D matrix or dataframe that includes predictors
+                                #'
+                                #' @return Predicted values of the given predictors
+                                #'
+                                #' @examples
+                                #' lessclassifier <- LESSClassifier$new()
+                                #' lessclassifier$fit(X_train, y_train)
+                                #' preds <- lessclassifier$predict(X_test)
+                                #' print(caret::confusionMatrix(data=factor(preds), reference = factor(y_test)))
                                 predict = function(X0){
                                   if(private$scaling){
                                     X0 <- private$scobject$transform(X0)

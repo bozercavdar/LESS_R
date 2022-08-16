@@ -722,7 +722,6 @@ LESSRegressor <- R6::R6Class(classname = "LESSRegressor",
                                  private$isFitted <- TRUE
                                  invisible(self)
                                },
-
                                #' @description
                                #' Predictions are evaluated for the test samples in X0
                                #'
