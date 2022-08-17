@@ -11,6 +11,24 @@ testFunc <- function(data = abalone) {
   y_train <- split_list[[3]]
   y_test <- split_list[[4]]
 
+  data <- iris
+  # data <- read.table(file.choose(), sep = ",")
+  # data <- data[,-c(2)]
+  # data <- data[,1:30]
+  # print(head(data))
+
+  # split_list <- train_test_split(data, test_size =  0.3, y_index = 1)
+  split_list <- train_test_split(data, test_size =  0.3)
+  X_train <- split_list[[1]]
+  X_test <- split_list[[2]]
+  y_train <- split_list[[3]]
+  y_test <- split_list[[4]]
+
+  str <- LESSClassifier$new(multiclass = "occ")
+  preds <- str$fit(X_train, y_train)$predict(X_test)
+  example <- caret::confusionMatrix(data=factor(preds), reference = factor(y_test))
+  print(example)
+
   # y_index = 1
   # X_train <- as.matrix(data[1:400,-y_index])
   # y_train <- data[1:400,y_index]
@@ -31,13 +49,13 @@ testFunc <- function(data = abalone) {
   # mape <- MLmetrics::MAPE(preds, y_test)
   # cat("MAPE: ", mape, "\n")
   #
-  cat("Total number of training samples: ", nrow(X_train), "\n")
-  LESS <- LESSRegressor$new(random_state = 1)
-  preds <- LESS$fit(X_train, y_train)$predict(X_test)
-  print(LESS)
-  print(head(matrix(c(y_test, preds), ncol = 2)))
-  mape <- MLmetrics::MAPE(preds, y_test)
-  cat("MAPE: ", mape, "\n")
+  # cat("Total number of training samples: ", nrow(X_train), "\n")
+  # LESS <- LESSRegressor$new(random_state = 1)
+  # preds <- LESS$fit(X_train, y_train)$predict(X_test)
+  # print(LESS)
+  # print(head(matrix(c(y_test, preds), ncol = 2)))
+  # mape <- MLmetrics::MAPE(preds, y_test)
+  # cat("MAPE: ", mape, "\n")
 
   # labels <- c(6,5,4,6,5,5,4,4,5,5)
   # testdata <- concrete[1:10,-3]
@@ -45,23 +63,6 @@ testFunc <- function(data = abalone) {
   # X <- as.matrix(testdata[,-ncol(testdata)])
   # y <- as.matrix(testdata[,ncol(testdata)])
 
-  # data <- iris
-  # data <- read.table(file.choose(), sep = ",")
-  # data <- data[,-c(2)]
-  # data <- data[,1:30]
-  # print(head(data))
-
-  # split_list <- train_test_split(data, test_size =  0.3, y_index = 1)
-  # split_list <- train_test_split(data, test_size =  0.3)
-  # X_train <- split_list[[1]]
-  # X_test <- split_list[[2]]
-  # y_train <- split_list[[3]]
-  # y_test <- split_list[[4]]
-  #
-  # str <- LESSClassifier$new(multiclass = "occ")
-  # preds <- str$fit(X_train, y_train)$predict(X_test)
-  # example <- caret::confusionMatrix(data=factor(preds), reference = factor(y_test))
-  # print(example)
 }
 
 comparison = function(dataset = synthetic_sine_data){

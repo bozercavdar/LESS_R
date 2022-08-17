@@ -1,3 +1,14 @@
+fit_binary = function(estimator, X, y){
+  unique_y <- unique(y)
+  if(length(unique_y) == 1){
+    est <- ConstantPredictor$new()$fit(X, y)$clone()
+  }else{
+    est <- estimator$clone()
+    est$fit(X, y)
+  }
+  return(est)
+}
+
 OneVsRestClassifier <- R6::R6Class(classname = "OneVsRestClassifier",
                                    private = list(
                                      estimator = NULL,
@@ -16,7 +27,8 @@ OneVsRestClassifier <- R6::R6Class(classname = "OneVsRestClassifier",
                                        class_matrix <- matrix(0, private$class_len, length(y))
                                        for(i in 1:private$class_len){
                                          class_matrix[i,y==private$uniqc[i]] <- 1
-                                         private$estimator_list <- append(private$estimator_list, private$estimator$fit(X, class_matrix[i,])$clone())
+                                         private$estimator_list <- append(private$estimator_list,
+                                                                          fit_binary(private$estimator, X, class_matrix[i,]))
                                        }
                                        invisible(self)
                                      },
@@ -56,7 +68,7 @@ OneVsOneClassifier <- R6::R6Class(classname = "OneVsOneClassifier",
                                         X_train <- as.matrix(X[-which(is.na(class_matrix[i,])),]) # omit the data points that belongs to other classes
                                         y_train <- as.matrix(na.omit(class_matrix[i,])) # omit the data points that belongs to other classes
                                         private$estimator_list <- append(private$estimator_list,
-                                                                         private$estimator$fit(X_train, y_train)$clone())
+                                                                         fit_binary(private$estimator, X_train, y_train))
                                       }
                                       invisible(self)
                                     },
@@ -136,13 +148,10 @@ OutputCodeClassifier <- R6::R6Class(classname = "OutputCodeClassifier",
                                         }
 
                                         for(i in 1:code_size){
-                                          if(length(unique(Y[,i])) == 1){
-                                            private$estimator_list <- append(private$estimator_list, ConstantPredictor$new()$fit(X, Y[,i])$clone())
-                                          }else{
-                                            private$estimator_list <- append(private$estimator_list,
-                                                                             private$estimator$fit(X, Y[,i])$clone())
-                                          }
+                                          private$estimator_list <- append(private$estimator_list,
+                                                                           fit_binary(private$estimator, X, Y[,i]))
                                         }
+
                                         invisible(self)
                                       },
                                       predict = function(X0){
