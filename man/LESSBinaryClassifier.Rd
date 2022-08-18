@@ -59,7 +59,7 @@ Creates a new instance of R6 Class of LESSBinaryClassifier
   tree_method = function(X) KDTree$new(X),
   cluster_method = NULL,
   local_estimator = LinearRegression$new(),
-  global_estimator = DecisionTreeRegressor$new(),
+  global_estimator = DecisionTreeClassifier$new(),
   distance_function = NULL,
   scaling = TRUE,
   warnings = TRUE

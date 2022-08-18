@@ -23,9 +23,10 @@ testFunc <- function(data = abalone) {
   #   print(example)
   # })
 
-  str <- LESSClassifier$new(multiclass = "ovr")
-  # str <- DecisionTreeClassifier$new()
+  str <- LESSClassifier$new(multiclass = "ovr", global_estimator = SVC$new())
+  # str <- SVC$new()
   preds <- str$fit(X_train, y_train)$predict(X_test)
+  print(preds)
   example <- caret::confusionMatrix(data=factor(preds), reference = factor(y_test))
   print(example)
 

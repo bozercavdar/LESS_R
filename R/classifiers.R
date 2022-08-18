@@ -45,8 +45,8 @@ DecisionTreeClassifier <- R6::R6Class(classname = "DecisionTreeClassifier",
                                        #' @return Fitted R6 Class of DecisionTreeClassifier
                                        #'
                                        #' @examples
-                                       #' data(abalone)
-                                       #' split_list <- train_test_split(abalone, test_size =  0.3)
+                                       #' data(iris)
+                                       #' split_list <- train_test_split(iris, test_size =  0.3)
                                        #' X_train <- split_list[[1]]
                                        #' X_test <- split_list[[2]]
                                        #' y_train <- split_list[[3]]
@@ -89,5 +89,70 @@ DecisionTreeClassifier <- R6::R6Class(classname = "DecisionTreeClassifier",
                                        get_estimator_type = function() {
                                          return(private$estimator_type)
                                        }
-                                     )
-)
+                                     ))
+
+#' @title Support Vector Classification
+#'
+#' @description Wrapper R6 Class of e1071::svm function that can be used for LESSRegressor and LESSClassifier
+#'
+#' @return R6 Class of SVC
+#' @seealso [e1071::svm()]
+#' @importFrom e1071 svm
+#' @export
+SVC <- R6::R6Class(classname = "SVC",
+                   inherit = SklearnEstimator,
+                   private = list(
+                     estimator_type = "classifier",
+                     model = NULL
+                   ),
+                   public = list(
+                     #' @description Fit the SVM model from the training set (X, y).
+                     #'
+                     #' @param X 2D matrix or dataframe that includes predictors
+                     #' @param y 1D vector or (n,1) dimensional matrix/dataframe that includes response variables
+                     #'
+                     #' @return Fitted R6 Class of SVC
+                     #'
+                     #' @examples
+                     #' data(iris)
+                     #' split_list <- train_test_split(iris, test_size =  0.3)
+                     #' X_train <- split_list[[1]]
+                     #' X_test <- split_list[[2]]
+                     #' y_train <- split_list[[3]]
+                     #' y_test <- split_list[[4]]
+                     #'
+                     #' svc <- SVC$new()
+                     #' svc$fit(X_train, y_train)
+                     fit = function(X, y){
+                       df <- prepareDataset(X, y)
+                       df$y <- as.factor(df$y)
+                       private$model <- e1071::svm(y ~ ., data = df, type = 'C-classification')
+                       invisible(self)
+                     },
+                     #' @description Predict regression value for X0.
+                     #'
+                     #' @param X0 2D matrix or dataframe that includes predictors
+                     #'
+                     #' @return The predict values.
+                     #'
+                     #' @examples
+                     #' svc <- SVC$new()
+                     #' svc$fit(X_train, y_train)
+                     #' preds <- svc$predict(X_test)
+                     #'
+                     #' svc <- SVC$new()
+                     #' preds <- svc$fit(X_train, y_train)$predict(X_test)
+                     #'
+                     #' preds <- SVC$new()$fit(X_train, y_train)$predict(X_test)
+                     #' print(head(matrix(c(y_test, preds), ncol = 2, dimnames = (list(NULL, c("True", "Prediction"))))))
+                     predict = function(X0){
+                       data <- prepareXset(X0)
+                       y_pred <- predict(private$model, data)
+                       return(as.numeric(as.character(y_pred)))
+                     },
+                     #' @description Auxiliary function returning the estimator type e.g 'regressor', 'classifier'
+                     get_estimator_type = function() {
+                       return(private$estimator_type)
+                     }
+                   ))
+

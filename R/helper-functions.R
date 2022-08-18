@@ -318,7 +318,7 @@ comparison_plot = function(X, y, model_list){
 #' get_functions()
 get_functions = function(){
   regressor_list <- c("DecisionTreeRegressor", "KNeighborsRegressor", "LESSRegressor", "LinearRegression", "RandomForestRegressor", "SVR")
-  classifier_list <- c("DecisionTreeClassifier")
+  classifier_list <- c("DecisionTreeClassifier", "SVC")
   clustering_list <- c("HierarchicalClustering", "KMeans")
   tree_list <- c("CoverTree", "KDTree")
   helper_function_list <- c("laplacian", "rbf", "train_test_split")
