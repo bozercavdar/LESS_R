@@ -318,12 +318,18 @@ comparison_plot = function(X, y, model_list){
 #' get_functions()
 get_functions = function(){
   regressor_list <- c("DecisionTreeRegressor", "KNeighborsRegressor", "LESSRegressor", "LinearRegression", "RandomForestRegressor", "SVR")
+  classifier_list <- c("DecisionTreeClassifier")
   clustering_list <- c("HierarchicalClustering", "KMeans")
   tree_list <- c("CoverTree", "KDTree")
   helper_function_list <- c("laplacian", "rbf", "train_test_split")
   cat("Regressors within LESS Package:", "\n")
   for(reg in regressor_list){
     cat("-", reg, "\n")
+  }
+  cat("\n")
+  cat("Classifiers within LESS Package:", "\n")
+  for(cls in classifier_list){
+    cat("-", cls, "\n")
   }
   cat("\n")
   cat("Clustering Methods within LESS Package:", "\n")

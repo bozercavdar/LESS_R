@@ -28,7 +28,7 @@ LESSBase <- R6::R6Class(classname = "LESSBase",
                                          private$warnings)
                           }
 
-                          if(getClassName(self) == "LESSClassifier" & is_regressor(private$global_estimator)){
+                          if(getClassName(self) == "LESSBinaryClassifier" & is_regressor(private$global_estimator)){
                             LESSWarn$new("\tLESSClassifier might work with a global regressor.\n\tHowever, we recommend using a classifier as the global estimator.",
                                          private$warnings)
                           }

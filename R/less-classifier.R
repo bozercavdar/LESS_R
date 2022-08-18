@@ -433,15 +433,15 @@ LESSClassifier <- R6::R6Class(classname = "LESSClassifier",
                                 strategy = NULL,
                                 set_strategy = function(n_classes){
                                   if(n_classes == 2){
-                                    private$strategy <- OneVsRestClassifier$new(estimator = LESSBinaryClassifier$new())
+                                    private$strategy <- OneVsRestClassifier$new(estimator = private$bclassifier)
                                   }else if(private$multiclass == "ovr"){
-                                    private$strategy <- OneVsRestClassifier$new(estimator = LESSBinaryClassifier$new())
+                                    private$strategy <- OneVsRestClassifier$new(estimator = private$bclassifier)
                                   }else if(private$multiclass == "ovo"){
-                                    private$strategy <- OneVsOneClassifier$new(estimator = LESSBinaryClassifier$new())
+                                    private$strategy <- OneVsOneClassifier$new(estimator = private$bclassifier)
                                   }else if(private$multiclass == "occ"){
-                                    private$strategy <- OutputCodeClassifier$new(estimator = LESSBinaryClassifier$new())
+                                    private$strategy <- OutputCodeClassifier$new(estimator = private$bclassifier)
                                   }else{
-                                    private$strategy <- OneVsRestClassifier$new(estimator = LESSBinaryClassifier$new())
+                                    private$strategy <- OneVsRestClassifier$new(estimator = private$bclassifier)
                                     LESSWarn$new("LESSClassifier works only with one of the following options:
                                                   (1) 'ovr' : OneVsRestClassifier (default),
                                                   (2) 'ovo' : OneVsOneClassifier,
@@ -480,7 +480,7 @@ LESSClassifier <- R6::R6Class(classname = "LESSClassifier",
                                                                                  n_replications = private$n_replications, d_normalize = private$d_normalize,
                                                                                  val_size = private$val_size, random_state = private$random_state, tree_method = private$tree_method,
                                                                                  cluster_method = private$cluster_method, local_estimator = private$local_estimator,
-                                                                                 global_estimator = private$local_estimator, distance_function = private$distance_function,
+                                                                                 global_estimator = private$global_estimator, distance_function = private$distance_function,
                                                                                  scaling = private$scaling, warnings = private$warnings)
                                 },
                                 #' @description
@@ -502,6 +502,7 @@ LESSClassifier <- R6::R6Class(classname = "LESSClassifier",
                                 #' lessclassifier <- LESSClassifier$new()
                                 #' lessclassifier$fit(X_train, y_train)
                                 fit = function(X, y){
+
                                   if(private$scaling){
                                     private$scobject <- StandardScaler$new()
                                     X <- private$scobject$fit_transform(X)
