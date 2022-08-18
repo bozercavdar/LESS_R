@@ -4,18 +4,10 @@ testFunc <- function(data = abalone) {
   #
   # })
 
-  # Now Selecting 70% of data as sample from total 'n' rows of the data
-  split_list <- train_test_split(data, test_size =  0.3, random_state = 1)
-  X_train <- split_list[[1]]
-  X_test <- split_list[[2]]
-  y_train <- split_list[[3]]
-  y_test <- split_list[[4]]
-
   data <- iris
-  # data <- read.table(file.choose(), sep = ",")
+  # data <- read.csv("C:/Users/ozerc/Desktop/data/balance-scale-cls.data", sep = ",", header = FALSE)
   # data <- data[,-c(2)]
   # data <- data[,1:30]
-  # print(head(data))
 
   # split_list <- train_test_split(data, test_size =  0.3, y_index = 1)
   split_list <- train_test_split(data, test_size =  0.3)
@@ -24,8 +16,17 @@ testFunc <- function(data = abalone) {
   y_train <- split_list[[3]]
   y_test <- split_list[[4]]
 
-  str <- LESSClassifier$new(multiclass = "occ")
+  # profvis::profvis({
+  #   str <- LESSClassifier$new(multiclass = "ovo")
+  #   preds <- str$fit(X_train, y_train)$predict(X_test)
+  #   example <- caret::confusionMatrix(data=factor(preds), reference = factor(y_test))
+  #   print(example)
+  # })
+
+  str <- LESSClassifier$new(multiclass = "ovr")
+  # str <- DecisionTreeClassifier$new()
   preds <- str$fit(X_train, y_train)$predict(X_test)
+  print(preds)
   example <- caret::confusionMatrix(data=factor(preds), reference = factor(y_test))
   print(example)
 

@@ -48,7 +48,7 @@ laplacian <- function(data, center, coeff=0.01){
 
 # takes X and y datasets and merges them into a dataframe with column names
 prepareDataset = function(X, y) {
-  merged_data <- cbind(y, X)
+  merged_data <- cbind.data.frame(y, X)
   df <- as.data.frame(merged_data)
   colX <- list()
   if(!is.vector(merged_data[,-1])){

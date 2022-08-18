@@ -10,8 +10,10 @@ fit_binary = function(estimator, X, y){
 }
 
 OneVsRestClassifier <- R6::R6Class(classname = "OneVsRestClassifier",
+                                   inherit = SklearnEstimator,
                                    private = list(
                                      estimator = NULL,
+                                     isFitted = FALSE,
                                      uniqc = NULL,
                                      class_len = NULL,
                                      estimator_list = NULL
@@ -30,9 +32,11 @@ OneVsRestClassifier <- R6::R6Class(classname = "OneVsRestClassifier",
                                          private$estimator_list <- append(private$estimator_list,
                                                                           fit_binary(private$estimator, X, class_matrix[i,]))
                                        }
+                                       private$isFitted <- TRUE
                                        invisible(self)
                                      },
                                      predict = function(X0){
+                                       check_is_fitted(self)
                                        data <- prepareXset(X0)
                                        class_probs <- matrix(0, private$class_len, nrow(data))
                                        for(i in 1:private$class_len){
@@ -41,12 +45,17 @@ OneVsRestClassifier <- R6::R6Class(classname = "OneVsRestClassifier",
                                        }
                                        class_preds <- private$uniqc[max.col(t(class_probs))]
                                        return(class_preds)
+                                     },
+                                     get_isFitted = function(){
+                                       return(private$isFitted)
                                      }
                                    ))
 
 OneVsOneClassifier <- R6::R6Class(classname = "OneVsOneClassifier",
+                                  inherit = SklearnEstimator,
                                   private = list(
                                     estimator = NULL,
+                                    isFitted = FALSE,
                                     uniqc = NULL,
                                     class_len = NULL,
                                     estimator_list = NULL,
@@ -70,9 +79,11 @@ OneVsOneClassifier <- R6::R6Class(classname = "OneVsOneClassifier",
                                         private$estimator_list <- append(private$estimator_list,
                                                                          fit_binary(private$estimator, X_train, y_train))
                                       }
+                                      private$isFitted <- TRUE
                                       invisible(self)
                                     },
                                     predict = function(X0){
+                                      check_is_fitted(self)
                                       data <- prepareXset(X0)
                                       win_counts <- matrix(0, private$class_len, nrow(data))
                                       class_probs <- matrix(0, private$class_len, nrow(data))
@@ -89,12 +100,17 @@ OneVsOneClassifier <- R6::R6Class(classname = "OneVsOneClassifier",
                                       # the class with the highest number of wins is the prediction
                                       class_preds <- private$uniqc[max.col(t(win_counts))]
                                       return(class_preds)
+                                    },
+                                    get_isFitted = function(){
+                                      return(private$isFitted)
                                     }
                                   ))
 
 OutputCodeClassifier <- R6::R6Class(classname = "OutputCodeClassifier",
+                                    inherit = SklearnEstimator,
                                     private = list(
                                       estimator = NULL,
+                                      isFitted = FALSE,
                                       uniqc = NULL,
                                       class_len = NULL,
                                       estimator_list = NULL,
@@ -152,9 +168,11 @@ OutputCodeClassifier <- R6::R6Class(classname = "OutputCodeClassifier",
                                                                            fit_binary(private$estimator, X, Y[,i]))
                                         }
 
+                                        private$isFitted <- TRUE
                                         invisible(self)
                                       },
                                       predict = function(X0){
+                                        check_is_fitted(self)
                                         data <- prepareXset(X0)
                                         class_probs <- matrix(0, length(private$estimator_list), nrow(data))
                                         for(i in 1:length(private$estimator_list)){
@@ -168,6 +186,9 @@ OutputCodeClassifier <- R6::R6Class(classname = "OutputCodeClassifier",
                                         class_preds <- apply(distances, 1, which.min)
 
                                         return(private$uniqc[class_preds])
+                                      },
+                                      get_isFitted = function(){
+                                        return(private$isFitted)
                                       }
                                     ))
 #' @title LESSBinaryClassifier
@@ -215,7 +236,7 @@ LESSBinaryClassifier <- R6::R6Class(classname = "LESSBinaryClassifier",
                                       #' @description Creates a new instance of R6 Class of LESSBinaryClassifier
                                       initialize = function(frac = NULL, n_neighbors = NULL, n_subsets = NULL, n_replications = 20, d_normalize = TRUE, val_size = NULL,
                                                             random_state = NULL, tree_method = function(X) KDTree$new(X), cluster_method = NULL,
-                                                            local_estimator = LinearRegression$new(), global_estimator = DecisionTreeRegressor$new(), distance_function = NULL,
+                                                            local_estimator = LinearRegression$new(), global_estimator = DecisionTreeClassifier$new(), distance_function = NULL,
                                                             scaling = TRUE, warnings = TRUE) {
                                         private$frac = frac
                                         private$n_replications = n_replications
@@ -339,7 +360,7 @@ LESSBinaryClassifier <- R6::R6Class(classname = "LESSBinaryClassifier",
                                           }
 
                                           if(length(global_model) != 0){
-                                            yhat[,i] <- as.integer(global_model$predict(Z0))
+                                            yhat[,i] <- global_model$predict(Z0)
                                             # Convert to 0-1
                                             yhat[,i] <- (yhat[,i] + 1)/2
 
@@ -437,7 +458,7 @@ LESSClassifier <- R6::R6Class(classname = "LESSClassifier",
                                 #' lessclassifier <- LESSClassifier$new(multiclass = "ovo")
                                 initialize = function(frac = NULL, n_neighbors = NULL, n_subsets = NULL, n_replications = 20, d_normalize = TRUE, val_size = NULL,
                                                       random_state = NULL, tree_method = function(X) KDTree$new(X), cluster_method = NULL,
-                                                      local_estimator = LinearRegression$new(), global_estimator = DecisionTreeRegressor$new(), distance_function = NULL,
+                                                      local_estimator = LinearRegression$new(), global_estimator = DecisionTreeClassifier$new(), distance_function = NULL,
                                                       scaling = TRUE, warnings = TRUE, multiclass = "ovr") {
                                   private$frac = frac
                                   private$n_replications = n_replications
@@ -489,7 +510,7 @@ LESSClassifier <- R6::R6Class(classname = "LESSClassifier",
                                   n_classes <- length(unique(y))
                                   private$set_strategy(n_classes)
                                   private$strategy$fit(X, y)
-                                  #private$update_params()
+                                  #FIXME private$update_params()
                                   private$isFitted <- TRUE
                                   invisible(self)
                                 },
