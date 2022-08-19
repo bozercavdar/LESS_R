@@ -58,11 +58,8 @@ DecisionTreeClassifier <- R6::R6Class(classname = "DecisionTreeClassifier",
                                          df <- prepareDataset(X, y)
                                          private$model <- rpart::rpart(y ~ ., data = df, method = "class", minsplit = private$min_samples_split,
                                                                        minbucket = private$min_samples_leaf, cp = private$cp, maxdepth = private$max_depth)
-                                         # rpart.plot::rpart.plot(private$model)
-                                         # summary(private$model)
+                                         private$isFitted <- TRUE
                                          invisible(self)
-                                         # print("model: ")
-
                                        },
                                        #' @description Predict regression value for X0.
                                        #'
@@ -81,6 +78,7 @@ DecisionTreeClassifier <- R6::R6Class(classname = "DecisionTreeClassifier",
                                        #' preds <- DecisionTreeClassifier$new()$fit(X_train, y_train)$predict(X_test)
                                        #' print(caret::confusionMatrix(data=preds, reference = factor(y_test)))
                                        predict = function(X0) {
+                                         check_is_fitted(self)
                                          data <- prepareXset(X0)
                                          y_pred <- predict(private$model, data, type = "class")
                                          return(y_pred)
@@ -127,6 +125,7 @@ SVC <- R6::R6Class(classname = "SVC",
                        df <- prepareDataset(X, y)
                        df$y <- as.factor(df$y)
                        private$model <- e1071::svm(y ~ ., data = df, type = 'C-classification')
+                       private$isFitted <- TRUE
                        invisible(self)
                      },
                      #' @description Predict regression value for X0.
@@ -146,6 +145,7 @@ SVC <- R6::R6Class(classname = "SVC",
                      #' preds <- SVC$new()$fit(X_train, y_train)$predict(X_test)
                      #' print(caret::confusionMatrix(data=preds, reference = factor(y_test)))
                      predict = function(X0){
+                       check_is_fitted(self)
                        data <- prepareXset(X0)
                        y_pred <- predict(private$model, data)
                        return(y_pred)

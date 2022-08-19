@@ -13,7 +13,6 @@ OneVsRestClassifier <- R6::R6Class(classname = "OneVsRestClassifier",
                                    inherit = SklearnEstimator,
                                    private = list(
                                      estimator = NULL,
-                                     isFitted = FALSE,
                                      uniqc = NULL,
                                      class_len = NULL,
                                      estimator_list = NULL
@@ -46,9 +45,6 @@ OneVsRestClassifier <- R6::R6Class(classname = "OneVsRestClassifier",
                                        class_preds <- private$uniqc[max.col(t(class_probs))]
                                        return(class_preds)
                                      },
-                                     get_isFitted = function(){
-                                       return(private$isFitted)
-                                     },
                                      get_estimators = function(){
                                        return(private$estimator_list)
                                      }
@@ -58,7 +54,6 @@ OneVsOneClassifier <- R6::R6Class(classname = "OneVsOneClassifier",
                                   inherit = SklearnEstimator,
                                   private = list(
                                     estimator = NULL,
-                                    isFitted = FALSE,
                                     uniqc = NULL,
                                     class_len = NULL,
                                     estimator_list = NULL,
@@ -104,9 +99,6 @@ OneVsOneClassifier <- R6::R6Class(classname = "OneVsOneClassifier",
                                       class_preds <- private$uniqc[max.col(t(win_counts))]
                                       return(class_preds)
                                     },
-                                    get_isFitted = function(){
-                                      return(private$isFitted)
-                                    },
                                     get_estimators = function(){
                                       return(private$estimator_list)
                                     }
@@ -116,7 +108,6 @@ OutputCodeClassifier <- R6::R6Class(classname = "OutputCodeClassifier",
                                     inherit = SklearnEstimator,
                                     private = list(
                                       estimator = NULL,
-                                      isFitted = FALSE,
                                       uniqc = NULL,
                                       class_len = NULL,
                                       estimator_list = NULL,
@@ -192,9 +183,6 @@ OutputCodeClassifier <- R6::R6Class(classname = "OutputCodeClassifier",
                                         class_preds <- apply(distances, 1, which.min)
 
                                         return(private$uniqc[class_preds])
-                                      },
-                                      get_isFitted = function(){
-                                        return(private$isFitted)
                                       },
                                       get_estimators = function(){
                                         return(private$estimator_list)
@@ -562,6 +550,7 @@ LESSClassifier <- R6::R6Class(classname = "LESSClassifier",
                                 #' preds <- lessclassifier$predict(X_test)
                                 #' print(caret::confusionMatrix(data=factor(preds), reference = factor(y_test)))
                                 predict = function(X0){
+                                  check_is_fitted(self)
                                   if(private$scaling){
                                     X0 <- private$scobject$transform(X0)
                                   }

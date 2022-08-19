@@ -59,7 +59,8 @@ BaseEstimator <- R6::R6Class(classname = "BaseEstimator",
 SklearnEstimator <- R6::R6Class(classname = "SklearnEstimator",
                                 inherit = BaseEstimator,
                                 private = list(
-                                  type = "estimator"
+                                  type = "estimator",
+                                  isFitted = FALSE,
                                 ),
                                 public = list(
                                   #' @description Dummy fit function
@@ -74,7 +75,11 @@ SklearnEstimator <- R6::R6Class(classname = "SklearnEstimator",
                                   #' @description Auxiliary function returning the type of the class e.g 'estimator'
                                   get_type = function(){
                                     return(private$type)
-                                  }
+                                  },
+                                  #' @description Auxiliary function returning the isFitted flag
+                                  get_isFitted = function(){
+                                    return(private$isFitted)
+                                  },
                                 )
 )
 
@@ -135,10 +140,7 @@ LinearRegression <- R6::R6Class(classname = "LinearRegression",
                                   fit = function(X, y) {
                                     df <- prepareDataset(X, y)
                                     private$model <- lm(y ~ ., data = df)
-                                    # if(length(private$model$coefficients) > private$model$rank){
-                                    #   print("rank deficient fit. number of parameters are more than the observations")
-                                    #   print(private$model$rank)
-                                    # }
+                                    private$isFitted <- TRUE
                                     invisible(self)
                                   },
                                   #' @description Predict regression value for X.
@@ -158,7 +160,9 @@ LinearRegression <- R6::R6Class(classname = "LinearRegression",
                                   #' preds <- LinearRegression$new()$fit(X_train, y_train)$predict(X_test)
                                   #' print(head(matrix(c(y_test, preds), ncol = 2, dimnames = (list(NULL, c("True", "Prediction"))))))
                                   predict = function(X0) {
+                                    check_is_fitted(self)
                                     data <- prepareXset(X0)
+                                    # in case of rank deficiency, supress related warnings
                                     suppressWarnings(predict(private$model, newdata = data))
                                   },
                                   #' @description Auxiliary function returning the summary of the fitted model
@@ -234,11 +238,8 @@ DecisionTreeRegressor <- R6::R6Class(classname = "DecisionTreeRegressor",
                                                                        control = rpart::rpart.control(minsplit = private$min_samples_split,
                                                                                                       minbucket = private$min_samples_leaf,
                                                                                                       cp = private$cp, maxdepth = private$max_depth))
-                                         # rpart.plot::rpart.plot(private$model)
-                                         # summary(private$model)
+                                         private$isFitted <- TRUE
                                          invisible(self)
-                                         # print("model: ")
-
                                        },
                                        #' @description Predict regression value for X0.
                                        #'
@@ -257,6 +258,7 @@ DecisionTreeRegressor <- R6::R6Class(classname = "DecisionTreeRegressor",
                                        #' preds <- DecisionTreeRegressor$new()$fit(X_train, y_train)$predict(X_test)
                                        #' print(head(matrix(c(y_test, preds), ncol = 2, dimnames = (list(NULL, c("True", "Prediction"))))))
                                        predict = function(X0) {
+                                         check_is_fitted(self)
                                          data <- prepareXset(X0)
                                          predict(private$model, data, method = "anova")
                                        },
@@ -265,75 +267,6 @@ DecisionTreeRegressor <- R6::R6Class(classname = "DecisionTreeRegressor",
                                          return(private$estimator_type)
                                        }
                                      )
-)
-
-#' @title DecisionTreeRegressor
-#'
-#' @description Wrapper R6 Class of party::ctree function that can be used for LESSRegressor and LESSClassifier
-#'
-#' @return R6 Class of DecisionTreeRegressor
-#' @importFrom party ctree
-#' @seealso [party::ctree()]
-#' @export
-DecisionTreeRegressor2 <- R6::R6Class(classname = "DecisionTreeRegressor2",
-                                      inherit = SklearnEstimator,
-                                      private = list(
-                                        estimator_type = "regressor",
-                                        model = NULL
-                                      ),
-                                      public = list(
-                                        #' @description Builds a decision tree regressor from the training set (X, y).
-                                        #'
-                                        #' @param X 2D matrix or dataframe that includes predictors
-                                        #' @param y 1D vector or (n,1) dimensional matrix/dataframe that includes response variables
-                                        #'
-                                        #' @return Fitted R6 Class of DecisionTreeRegressor
-                                        #'
-                                        #' @examples
-                                        #' data(abalone)
-                                        #' split_list <- train_test_split(abalone, test_size =  0.3)
-                                        #' X_train <- split_list[[1]]
-                                        #' X_test <- split_list[[2]]
-                                        #' y_train <- split_list[[3]]
-                                        #' y_test <- split_list[[4]]
-                                        #'
-                                        #' dt <- DecisionTreeRegressor$new()
-                                        #' dt$fit(X_train, y_train)
-                                        fit = function(X, y) {
-                                          df <- prepareDataset(X, y)
-                                          private$model <- party::ctree(
-                                            y ~ .,
-                                            data = df,
-                                            controls = party::ctree_control(minsplit = 2, minbucket = 1))
-                                          # plot(private$model)
-                                          invisible(self)
-                                        },
-                                        #' @description Predict regression value for X0.
-                                        #'
-                                        #' @param X0 2D matrix or dataframe that includes predictors
-                                        #'
-                                        #' @return The predict values.
-                                        #'
-                                        #' @examples
-                                        #' dt <- DecisionTreeRegressor$new()
-                                        #' dt$fit(X_train, y_train)
-                                        #' preds <- dt$predict(X_test)
-                                        #'
-                                        #' dt <- DecisionTreeRegressor$new()
-                                        #' preds <- dt$fit(X_train, y_train)$predict(X_test)
-                                        #'
-                                        #' preds <- DecisionTreeRegressor$new()$fit(X_train, y_train)$predict(X_test)
-                                        #' print(head(matrix(c(y_test, preds), ncol = 2, dimnames = (list(NULL, c("True", "Prediction"))))))
-                                        predict = function(X0) {
-                                          data <- prepareXset(X0)
-                                          predict(private$model, data)
-                                        },
-                                        #' @description Auxiliary function returning the estimator type e.g 'regressor', 'classifier'
-                                        get_estimator_type = function() {
-                                          return(private$estimator_type)
-                                        }
-                                      )
-)
 
 #' @title RandomForestRegressor
 #'
@@ -399,6 +332,7 @@ RandomForestRegressor <- R6::R6Class(classname = "RandomForestRegressor",
                                          private$model <- randomForest::randomForest(y ~ ., data = df, type = "regression", ntree = private$n_estimators,
                                                                                      nodesize = private$min_samples_leaf,
                                                                                      maxnodes = private$max_leaf_nodes)
+                                         private$isFitted <- TRUE
                                          invisible(self)
                                        },
                                        #' @description Predict regression value for X0.
@@ -418,6 +352,7 @@ RandomForestRegressor <- R6::R6Class(classname = "RandomForestRegressor",
                                        #' preds <- RandomForestRegressor$new()$fit(X_train, y_train)$predict(X_test)
                                        #' print(head(matrix(c(y_test, preds), ncol = 2, dimnames = (list(NULL, c("True", "Prediction"))))))
                                        predict = function(X0){
+                                         check_is_fitted(self)
                                          data <- prepareXset(X0)
                                          predict(private$model, data)
                                        },
@@ -473,6 +408,7 @@ KNeighborsRegressor <- R6::R6Class(classname = "KNeighborsRegressor",
                                      fit = function(X, y){
                                        df <- prepareDataset(X, y)
                                        private$model <- caret::knnreg(y ~ ., data = df, k=private$k)
+                                       private$isFitted <- TRUE
                                        invisible(self)
                                      },
                                      #' @description Predict regression value for X0.
@@ -492,6 +428,7 @@ KNeighborsRegressor <- R6::R6Class(classname = "KNeighborsRegressor",
                                      #' preds <- KNeighborsRegressor$new()$fit(X_train, y_train)$predict(X_test)
                                      #' print(head(matrix(c(y_test, preds), ncol = 2, dimnames = (list(NULL, c("True", "Prediction"))))))
                                      predict = function(X0){
+                                       check_is_fitted(self)
                                        data <- prepareXset(X0)
                                        predict(private$model, data)
                                      },
@@ -536,6 +473,7 @@ SVR <- R6::R6Class(classname = "SVR",
                      fit = function(X, y){
                        df <- prepareDataset(X, y)
                        private$model <- e1071::svm(y ~ ., data = df)
+                       private$isFitted <- TRUE
                        invisible(self)
                      },
                      #' @description Predict regression value for X0.
@@ -555,6 +493,7 @@ SVR <- R6::R6Class(classname = "SVR",
                      #' preds <- SVR$new()$fit(X_train, y_train)$predict(X_test)
                      #' print(head(matrix(c(y_test, preds), ncol = 2, dimnames = (list(NULL, c("True", "Prediction"))))))
                      predict = function(X0){
+                       check_is_fitted(self)
                        data <- prepareXset(X0)
                        predict(private$model, data)
                      },
