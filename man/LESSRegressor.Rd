@@ -77,6 +77,7 @@ print(head(matrix(c(y_test, preds), ncol = 2, dimnames = (list(NULL, c("True", "
 <li><span class="pkg-link" data-pkg="less" data-topic="LESSBase" data-id="get_n_replications"><a href='../../less/html/LESSBase.html#method-LESSBase-get_n_replications'><code>less::LESSBase$get_n_replications()</code></a></li>
 <li><span class="pkg-link" data-pkg="less" data-topic="LESSBase" data-id="get_n_subsets"><a href='../../less/html/LESSBase.html#method-LESSBase-get_n_subsets'><code>less::LESSBase$get_n_subsets()</code></a></li>
 <li><span class="pkg-link" data-pkg="less" data-topic="LESSBase" data-id="get_random_state"><a href='../../less/html/LESSBase.html#method-LESSBase-get_random_state'><code>less::LESSBase$get_random_state()</code></a></li>
+<li><span class="pkg-link" data-pkg="less" data-topic="LESSBase" data-id="get_replications"><a href='../../less/html/LESSBase.html#method-LESSBase-get_replications'><code>less::LESSBase$get_replications()</code></a></li>
 <li><span class="pkg-link" data-pkg="less" data-topic="LESSBase" data-id="get_scaling"><a href='../../less/html/LESSBase.html#method-LESSBase-get_scaling'><code>less::LESSBase$get_scaling()</code></a></li>
 <li><span class="pkg-link" data-pkg="less" data-topic="LESSBase" data-id="get_val_size"><a href='../../less/html/LESSBase.html#method-LESSBase-get_val_size'><code>less::LESSBase$get_val_size()</code></a></li>
 <li><span class="pkg-link" data-pkg="less" data-topic="LESSBase" data-id="print"><a href='../../less/html/LESSBase.html#method-LESSBase-print'><code>less::LESSBase$print()</code></a></li>

@@ -48,6 +48,9 @@ OneVsRestClassifier <- R6::R6Class(classname = "OneVsRestClassifier",
                                      },
                                      get_isFitted = function(){
                                        return(private$isFitted)
+                                     },
+                                     get_estimators = function(){
+                                       return(private$estimator_list)
                                      }
                                    ))
 
@@ -103,6 +106,9 @@ OneVsOneClassifier <- R6::R6Class(classname = "OneVsOneClassifier",
                                     },
                                     get_isFitted = function(){
                                       return(private$isFitted)
+                                    },
+                                    get_estimators = function(){
+                                      return(private$estimator_list)
                                     }
                                   ))
 
@@ -189,6 +195,9 @@ OutputCodeClassifier <- R6::R6Class(classname = "OutputCodeClassifier",
                                       },
                                       get_isFitted = function(){
                                         return(private$isFitted)
+                                      },
+                                      get_estimators = function(){
+                                        return(private$estimator_list)
                                       }
                                     ))
 #' @title LESSBinaryClassifier
@@ -360,7 +369,8 @@ LESSBinaryClassifier <- R6::R6Class(classname = "LESSBinaryClassifier",
                                           }
 
                                           if(length(global_model) != 0){
-                                            yhat[,i] <- global_model$predict(Z0)
+                                            # global_model$predict return factor, so converting it to numeric values is necessary
+                                            yhat[,i] <- as.numeric(as.character(global_model$predict(Z0)))
                                             # Convert to 0-1
                                             yhat[,i] <- (yhat[,i] + 1)/2
 
@@ -384,6 +394,10 @@ LESSBinaryClassifier <- R6::R6Class(classname = "LESSBinaryClassifier",
                                         predprobs <- predprobs / private$n_replications
 
                                         return(predprobs)
+                                      },
+                                      #' @description Auxiliary function returning the global_estimator
+                                      get_global_estimator = function(){
+                                        return(private$global_estimator)
                                       }
                                     ))
 
@@ -432,6 +446,7 @@ LESSClassifier <- R6::R6Class(classname = "LESSClassifier",
                                 bclassifier = NULL,
                                 strategy = NULL,
                                 set_strategy = function(n_classes){
+                                  # Auxiliary function to set the selected the strategy
                                   if(n_classes == 2){
                                     private$strategy <- OneVsRestClassifier$new(estimator = private$bclassifier)
                                   }else if(private$multiclass == "ovr"){
@@ -447,6 +462,21 @@ LESSClassifier <- R6::R6Class(classname = "LESSClassifier",
                                                   (2) 'ovo' : OneVsOneClassifier,
                                                   (3) 'occ' : OutputCodeClassifier,
                                                   Switching to 'ovr' ...", private$warnings)
+                                  }
+                                },
+                                update_params = function(first_estimator, n_classes){
+                                  # Parameters of the wrapper class are updated, since the functions
+                                  # _set_local_attributes and _check_input may alter the following parameters
+                                  private$global_estimator <- first_estimator$get_global_estimator()
+                                  private$frac <- first_estimator$get_frac()
+                                  private$n_neighbors <- first_estimator$get_n_neighbors()
+                                  private$n_subsets <- first_estimator$get_n_subsets()
+                                  private$n_replications <- first_estimator$get_n_replications()
+                                  private$d_normalize <- first_estimator$get_d_normalize()
+                                  # Replications are stored only if it is a binary classification problem
+                                  # Otherwise, there are multiple binary classifiers, and hence, multiple replications
+                                  if(n_classes == 2){
+                                    private$replications <- first_estimator$get_replications()
                                   }
                                 }
                               ),
@@ -511,7 +541,11 @@ LESSClassifier <- R6::R6Class(classname = "LESSClassifier",
                                   n_classes <- length(unique(y))
                                   private$set_strategy(n_classes)
                                   private$strategy$fit(X, y)
-                                  #FIXME private$update_params()
+                                  first_estimator <- private$strategy$get_estimators()[[1]]
+                                  if(getClassName(first_estimator) == "LESSBinaryClassifier"){
+                                    private$update_params(first_estimator, n_classes)
+                                  }
+
                                   private$isFitted <- TRUE
                                   invisible(self)
                                 },

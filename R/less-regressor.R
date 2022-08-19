@@ -590,6 +590,11 @@ LESSBase <- R6::R6Class(classname = "LESSBase",
                         #' @description Auxiliary function returning the isFitted flag
                         get_isFitted = function(){
                           return(private$isFitted)
+                        },
+
+                        #' @description Auxiliary function returning the isFitted flag
+                        get_replications = function(){
+                          return(private$replications)
                         }
                       )
                     )

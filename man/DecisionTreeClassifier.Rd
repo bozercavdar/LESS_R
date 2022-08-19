@@ -45,7 +45,7 @@ dt <- DecisionTreeClassifier$new()
 preds <- dt$fit(X_train, y_train)$predict(X_test)
 
 preds <- DecisionTreeClassifier$new()$fit(X_train, y_train)$predict(X_test)
-print(head(matrix(c(y_test, preds), ncol = 2, dimnames = (list(NULL, c("True", "Prediction"))))))
+print(caret::confusionMatrix(data=preds, reference = factor(y_test)))
 }
 \seealso{
 \code{\link[rpart:rpart]{rpart::rpart()}}
@@ -181,7 +181,7 @@ dt <- DecisionTreeClassifier$new()
 preds <- dt$fit(X_train, y_train)$predict(X_test)
 
 preds <- DecisionTreeClassifier$new()$fit(X_train, y_train)$predict(X_test)
-print(head(matrix(c(y_test, preds), ncol = 2, dimnames = (list(NULL, c("True", "Prediction"))))))
+print(caret::confusionMatrix(data=preds, reference = factor(y_test)))
 }
 \if{html}{\out{</div>}}
 

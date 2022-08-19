@@ -79,11 +79,11 @@ DecisionTreeClassifier <- R6::R6Class(classname = "DecisionTreeClassifier",
                                        #' preds <- dt$fit(X_train, y_train)$predict(X_test)
                                        #'
                                        #' preds <- DecisionTreeClassifier$new()$fit(X_train, y_train)$predict(X_test)
-                                       #' print(head(matrix(c(y_test, preds), ncol = 2, dimnames = (list(NULL, c("True", "Prediction"))))))
+                                       #' print(caret::confusionMatrix(data=preds, reference = factor(y_test)))
                                        predict = function(X0) {
                                          data <- prepareXset(X0)
                                          y_pred <- predict(private$model, data, type = "class")
-                                         return(as.numeric(as.character(y_pred)))
+                                         return(y_pred)
                                        },
                                        #' @description Auxiliary function returning the estimator type e.g 'regressor', 'classifier'
                                        get_estimator_type = function() {
@@ -144,11 +144,11 @@ SVC <- R6::R6Class(classname = "SVC",
                      #' preds <- svc$fit(X_train, y_train)$predict(X_test)
                      #'
                      #' preds <- SVC$new()$fit(X_train, y_train)$predict(X_test)
-                     #' print(head(matrix(c(y_test, preds), ncol = 2, dimnames = (list(NULL, c("True", "Prediction"))))))
+                     #' print(caret::confusionMatrix(data=preds, reference = factor(y_test)))
                      predict = function(X0){
                        data <- prepareXset(X0)
                        y_pred <- predict(private$model, data)
-                       return(as.numeric(as.character(y_pred)))
+                       return(y_pred)
                      },
                      #' @description Auxiliary function returning the estimator type e.g 'regressor', 'classifier'
                      get_estimator_type = function() {

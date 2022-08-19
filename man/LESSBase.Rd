@@ -26,6 +26,7 @@ The base class for LESSRegressor and LESSClassifier
 \item \href{#method-LESSBase-get_val_size}{\code{LESSBase$get_val_size()}}
 \item \href{#method-LESSBase-get_random_state}{\code{LESSBase$get_random_state()}}
 \item \href{#method-LESSBase-get_isFitted}{\code{LESSBase$get_isFitted()}}
+\item \href{#method-LESSBase-get_replications}{\code{LESSBase$get_replications()}}
 \item \href{#method-LESSBase-clone}{\code{LESSBase$clone()}}
 }
 }
@@ -159,6 +160,16 @@ Auxiliary function returning the random seed
 Auxiliary function returning the isFitted flag
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{LESSBase$get_isFitted()}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-LESSBase-get_replications"></a>}}
+\if{latex}{\out{\hypertarget{method-LESSBase-get_replications}{}}}
+\subsection{Method \code{get_replications()}}{
+Auxiliary function returning the isFitted flag
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{LESSBase$get_replications()}\if{html}{\out{</div>}}
 }
 
 }

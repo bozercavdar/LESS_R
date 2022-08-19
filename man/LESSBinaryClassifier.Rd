@@ -18,6 +18,7 @@ Auxiliary binary classifier for Learning with Subset Selection (LESS)
 \item \href{#method-LESSBinaryClassifier-new}{\code{LESSBinaryClassifier$new()}}
 \item \href{#method-LESSBinaryClassifier-fit}{\code{LESSBinaryClassifier$fit()}}
 \item \href{#method-LESSBinaryClassifier-predict_proba}{\code{LESSBinaryClassifier$predict_proba()}}
+\item \href{#method-LESSBinaryClassifier-get_global_estimator}{\code{LESSBinaryClassifier$get_global_estimator()}}
 \item \href{#method-LESSBinaryClassifier-clone}{\code{LESSBinaryClassifier$clone()}}
 }
 }
@@ -36,6 +37,7 @@ Auxiliary binary classifier for Learning with Subset Selection (LESS)
 <li><span class="pkg-link" data-pkg="less" data-topic="LESSBase" data-id="get_n_replications"><a href='../../less/html/LESSBase.html#method-LESSBase-get_n_replications'><code>less::LESSBase$get_n_replications()</code></a></li>
 <li><span class="pkg-link" data-pkg="less" data-topic="LESSBase" data-id="get_n_subsets"><a href='../../less/html/LESSBase.html#method-LESSBase-get_n_subsets'><code>less::LESSBase$get_n_subsets()</code></a></li>
 <li><span class="pkg-link" data-pkg="less" data-topic="LESSBase" data-id="get_random_state"><a href='../../less/html/LESSBase.html#method-LESSBase-get_random_state'><code>less::LESSBase$get_random_state()</code></a></li>
+<li><span class="pkg-link" data-pkg="less" data-topic="LESSBase" data-id="get_replications"><a href='../../less/html/LESSBase.html#method-LESSBase-get_replications'><code>less::LESSBase$get_replications()</code></a></li>
 <li><span class="pkg-link" data-pkg="less" data-topic="LESSBase" data-id="get_scaling"><a href='../../less/html/LESSBase.html#method-LESSBase-get_scaling'><code>less::LESSBase$get_scaling()</code></a></li>
 <li><span class="pkg-link" data-pkg="less" data-topic="LESSBase" data-id="get_val_size"><a href='../../less/html/LESSBase.html#method-LESSBase-get_val_size'><code>less::LESSBase$get_val_size()</code></a></li>
 <li><span class="pkg-link" data-pkg="less" data-topic="LESSBase" data-id="print"><a href='../../less/html/LESSBase.html#method-LESSBase-print'><code>less::LESSBase$print()</code></a></li>
@@ -146,6 +148,16 @@ Prediction probabilities are evaluated for the test samples in X0
 }
 \if{html}{\out{</div>}}
 }
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-LESSBinaryClassifier-get_global_estimator"></a>}}
+\if{latex}{\out{\hypertarget{method-LESSBinaryClassifier-get_global_estimator}{}}}
+\subsection{Method \code{get_global_estimator()}}{
+Auxiliary function returning the global_estimator
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{LESSBinaryClassifier$get_global_estimator()}\if{html}{\out{</div>}}
+}
+
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-LESSBinaryClassifier-clone"></a>}}
