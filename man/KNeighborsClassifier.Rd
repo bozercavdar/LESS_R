@@ -154,7 +154,7 @@ Predict regression value for X0.
 \if{html}{\out{</div>}}
 }
 \subsection{Returns}{
-A vector of the predicted classes.
+Factor of the predict classes.
 }
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}

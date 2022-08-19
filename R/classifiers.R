@@ -307,7 +307,7 @@ KNeighborsClassifier <- R6::R6Class(classname = "KNeighborsClassifier",
                                      #'
                                      #' @param X0 2D matrix or dataframe that includes predictors
                                      #'
-                                     #' @return A vector of the predicted classes.
+                                     #' @return Factor of the predict classes.
                                      #'
                                      #' @examples
                                      #' knc <- KNeighborsClassifier$new()
@@ -322,7 +322,8 @@ KNeighborsClassifier <- R6::R6Class(classname = "KNeighborsClassifier",
                                      predict = function(X0){
                                        check_is_fitted(self)
                                        data <- prepareXset(X0)
-                                       predict(private$model, data, type = "class")
+                                       y_pred <- predict(private$model, data, type = "class")
+                                       return(factor(y_pred))
                                      },
                                      #' @description Auxiliary function returning the estimator type e.g 'regressor', 'classifier'
                                      get_estimator_type = function() {
