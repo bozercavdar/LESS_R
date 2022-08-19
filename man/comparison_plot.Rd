@@ -6,6 +6,13 @@
 \usage{
 comparison_plot(X, y, model_list)
 }
+\arguments{
+\item{X}{Predictors}
+
+\item{y}{Response variables}
+
+\item{model_list}{List of models to be compared}
+}
 \description{
 Plots the fitted functions obtained with various regressors (using their default values) on the
 one-dimensional dataset (X, y).

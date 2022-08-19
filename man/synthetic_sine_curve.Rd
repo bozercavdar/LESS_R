@@ -6,6 +6,9 @@
 \usage{
 synthetic_sine_curve(n_samples = 200)
 }
+\arguments{
+\item{n_samples}{Number of data points to be generated}
+}
 \description{
 A simple function to generate n_samples from sine curve in the range (-10, 10) with some amplitude.
 The function returns the dataset (X, y), and plots the function (curve) along with the dataset (circles)

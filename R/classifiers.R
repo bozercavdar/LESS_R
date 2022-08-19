@@ -156,3 +156,99 @@ SVC <- R6::R6Class(classname = "SVC",
                      }
                    ))
 
+#' @title RandomForestClassifier
+#'
+#' @description Wrapper R6 Class of randomForest::randomForest function that can be used for LESSRegressor and LESSClassifier
+#'
+#' @param n_estimators Number of trees to grow. This should not be set to too small a number,
+#' to ensure that every input row gets predicted at least a few times (defaults to 100).
+#' @param random_state Seed number to be used for fixing the randomness (default to NULL).
+#' @param min_samples_leaf Minimum size of terminal nodes. Setting this number larger causes smaller trees to be grown
+#' (and thus take less time) (defaults to 1)
+#' @param max_leaf_nodes Maximum number of terminal nodes trees in the forest can have.
+#' If not given, trees are grown to the maximum possible (subject to limits by nodesize).
+#' If set larger than maximum possible, a warning is issued. (defaults to NULL)
+#'
+#' @return R6 Class of RandomForestClassifier
+#' @importFrom randomForest randomForest
+#' @seealso [randomForest::randomForest()]
+#' @export
+RandomForestClassifier <- R6::R6Class(classname = "RandomForestClassifier",
+                                     inherit = SklearnEstimator,
+                                     private = list(
+                                       estimator_type = "classifier",
+                                       model = NULL,
+                                       n_estimators = NULL,
+                                       random_state = NULL,
+                                       min_samples_leaf = NULL,
+                                       max_leaf_nodes = NULL
+                                     ),
+                                     public = list(
+                                       #' @description Creates a new instance of R6 Class of RandomForestClassifier
+                                       #'
+                                       #' @examples
+                                       #' rf <- RandomForestClassifier$new()
+                                       #' rf <- RandomForestClassifier$new(n_estimators = 500)
+                                       #' rf <- RandomForestClassifier$new(n_estimators = 500, random_state = 100)
+                                       initialize = function(n_estimators = 100, random_state = NULL, min_samples_leaf = 1,
+                                                             max_leaf_nodes = NULL){
+                                         private$n_estimators = n_estimators
+                                         private$random_state = random_state
+                                         private$min_samples_leaf = min_samples_leaf
+                                         private$max_leaf_nodes = max_leaf_nodes
+                                       },
+                                       #' @description Builds a random forest regressor from the training set (X, y).
+                                       #'
+                                       #' @param X 2D matrix or dataframe that includes predictors
+                                       #' @param y 1D vector or (n,1) dimensional matrix/dataframe that includes response variables
+                                       #'
+                                       #' @return Fitted R6 Class of RandomForestClassifier
+                                       #'
+                                       #' @examples
+                                       #' data(iris)
+                                       #' split_list <- train_test_split(iris, test_size =  0.3)
+                                       #' X_train <- split_list[[1]]
+                                       #' X_test <- split_list[[2]]
+                                       #' y_train <- split_list[[3]]
+                                       #' y_test <- split_list[[4]]
+                                       #'
+                                       #' rf <- RandomForestClassifier$new()
+                                       #' rf$fit(X_train, y_train)
+                                       fit = function(X, y){
+                                         df <- prepareDataset(X, y)
+                                         df$y <- as.factor(df$y)
+                                         set.seed(private$random_state)
+                                         private$model <- randomForest::randomForest(y ~ ., data = df, ntree = private$n_estimators,
+                                                                                     nodesize = private$min_samples_leaf,
+                                                                                     maxnodes = private$max_leaf_nodes,
+                                                                                     importance = TRUE,
+                                                                                     proximity = TRUE)
+                                         private$isFitted <- TRUE
+                                         invisible(self)
+                                       },
+                                       #' @description Predict regression value for X0.
+                                       #'
+                                       #' @param X0 2D matrix or dataframe that includes predictors
+                                       #'
+                                       #' @return The predict values.
+                                       #'
+                                       #' @examples
+                                       #' rf <- RandomForestClassifier$new()
+                                       #' rf$fit(X_train, y_train)
+                                       #' preds <- rf$predict(X_test)
+                                       #'
+                                       #' rf <- RandomForestClassifier$new()
+                                       #' preds <- rf$fit(X_train, y_train)$predict(X_test)
+                                       #'
+                                       #' preds <- RandomForestClassifier$new()$fit(X_train, y_train)$predict(X_test)
+                                       #' print(caret::confusionMatrix(data=preds, reference = factor(y_test)))
+                                       predict = function(X0){
+                                         check_is_fitted(self)
+                                         data <- prepareXset(X0)
+                                         predict(private$model, data)
+                                       },
+                                       #' @description Auxiliary function returning the estimator type e.g 'regressor', 'classifier'
+                                       get_estimator_type = function() {
+                                         return(private$estimator_type)
+                                       }
+                                     ))

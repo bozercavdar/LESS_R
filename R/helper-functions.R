@@ -266,6 +266,8 @@ getMode <- function(v) {
 #' @description A simple function to generate n_samples from sine curve in the range (-10, 10) with some amplitude.
 #' The function returns the dataset (X, y), and plots the function (curve) along with the dataset (circles)
 #'
+#' @param n_samples Number of data points to be generated
+#'
 #' @export
 synthetic_sine_curve = function(n_samples=200) {
   xvals <- seq(-10,10,length.out=n_samples+1)[-(n_samples+1)]
@@ -290,6 +292,10 @@ synthetic_sine_curve = function(n_samples=200) {
 #'
 #' @description Plots the fitted functions obtained with various regressors (using their default values) on the
 #' one-dimensional dataset (X, y).
+#'
+#' @param X Predictors
+#' @param y Response variables
+#' @param model_list List of models to be compared
 #'
 #' @export
 comparison_plot = function(X, y, model_list){
