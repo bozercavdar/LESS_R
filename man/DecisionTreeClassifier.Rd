@@ -129,7 +129,7 @@ Builds a decision tree regressor from the training set (X, y).
 \describe{
 \item{\code{X}}{2D matrix or dataframe that includes predictors}
 
-\item{\code{y}}{1D vector or (n,1) dimensional matrix/dataframe that includes response variables}
+\item{\code{y}}{1D vector or (n,1) dimensional matrix/dataframe that includes labels}
 }
 \if{html}{\out{</div>}}
 }
@@ -170,7 +170,7 @@ Predict regression value for X0.
 \if{html}{\out{</div>}}
 }
 \subsection{Returns}{
-The predict values.
+Factor of the predict classes.
 }
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}

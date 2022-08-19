@@ -40,7 +40,7 @@ DecisionTreeClassifier <- R6::R6Class(classname = "DecisionTreeClassifier",
                                        #' @description Builds a decision tree regressor from the training set (X, y).
                                        #'
                                        #' @param X 2D matrix or dataframe that includes predictors
-                                       #' @param y 1D vector or (n,1) dimensional matrix/dataframe that includes response variables
+                                       #' @param y 1D vector or (n,1) dimensional matrix/dataframe that includes labels
                                        #'
                                        #' @return Fitted R6 Class of DecisionTreeClassifier
                                        #'
@@ -65,7 +65,7 @@ DecisionTreeClassifier <- R6::R6Class(classname = "DecisionTreeClassifier",
                                        #'
                                        #' @param X0 2D matrix or dataframe that includes predictors
                                        #'
-                                       #' @return The predict values.
+                                       #' @return Factor of the predict classes.
                                        #'
                                        #' @examples
                                        #' dt <- DecisionTreeClassifier$new()
@@ -107,7 +107,7 @@ SVC <- R6::R6Class(classname = "SVC",
                      #' @description Fit the SVM model from the training set (X, y).
                      #'
                      #' @param X 2D matrix or dataframe that includes predictors
-                     #' @param y 1D vector or (n,1) dimensional matrix/dataframe that includes response variables
+                     #' @param y 1D vector or (n,1) dimensional matrix/dataframe that includes labels
                      #'
                      #' @return Fitted R6 Class of SVC
                      #'
@@ -132,7 +132,7 @@ SVC <- R6::R6Class(classname = "SVC",
                      #'
                      #' @param X0 2D matrix or dataframe that includes predictors
                      #'
-                     #' @return The predict values.
+                     #' @return Factor of the predict classes.
                      #'
                      #' @examples
                      #' svc <- SVC$new()
@@ -200,7 +200,7 @@ RandomForestClassifier <- R6::R6Class(classname = "RandomForestClassifier",
                                        #' @description Builds a random forest regressor from the training set (X, y).
                                        #'
                                        #' @param X 2D matrix or dataframe that includes predictors
-                                       #' @param y 1D vector or (n,1) dimensional matrix/dataframe that includes response variables
+                                       #' @param y 1D vector or (n,1) dimensional matrix/dataframe that includes labels
                                        #'
                                        #' @return Fitted R6 Class of RandomForestClassifier
                                        #'
@@ -230,7 +230,7 @@ RandomForestClassifier <- R6::R6Class(classname = "RandomForestClassifier",
                                        #'
                                        #' @param X0 2D matrix or dataframe that includes predictors
                                        #'
-                                       #' @return The predict values.
+                                       #' @return Factor of the predict classes.
                                        #'
                                        #' @examples
                                        #' rf <- RandomForestClassifier$new()
@@ -252,3 +252,81 @@ RandomForestClassifier <- R6::R6Class(classname = "RandomForestClassifier",
                                          return(private$estimator_type)
                                        }
                                      ))
+
+#' @title KNeighborsClassifier
+#'
+#' @description Wrapper R6 Class of caret::knnreg function that can be used for LESSRegressor and LESSClassifier
+#'
+#' @param k Number of neighbors considered (defaults to 5).
+#'
+#' @return R6 Class of KNeighborsClassifier
+#' @seealso [caret::knn3()]
+#' @importFrom caret knn3
+#' @export
+KNeighborsClassifier <- R6::R6Class(classname = "KNeighborsClassifier",
+                                   inherit = SklearnEstimator,
+                                   private = list(
+                                     estimator_type = "classifier",
+                                     model = NULL,
+                                     k = NULL
+                                   ),
+                                   public = list(
+                                     #' @description Creates a new instance of R6 Class of KNeighborsClassifier
+                                     #'
+                                     #' @examples
+                                     #' knc <- KNeighborsClassifier$new()
+                                     #' knc <- KNeighborsClassifier$new(k = 5)
+                                     initialize = function(k = 5){
+                                       private$k = k
+                                     },
+                                     #' @description Fit the k-nearest neighbors regressor from the training set (X, y).
+                                     #'
+                                     #' @param X 2D matrix or dataframe that includes predictors
+                                     #' @param y 1D vector or (n,1) dimensional matrix/dataframe that includes labels
+                                     #'
+                                     #' @return Fitted R6 Class of KNeighborsClassifier
+                                     #'
+                                     #' @examples
+                                     #' data(iris)
+                                     #' split_list <- train_test_split(iris, test_size =  0.3)
+                                     #' X_train <- split_list[[1]]
+                                     #' X_test <- split_list[[2]]
+                                     #' y_train <- split_list[[3]]
+                                     #' y_test <- split_list[[4]]
+                                     #'
+                                     #' knc <- KNeighborsClassifier$new()
+                                     #' knc$fit(X_train, y_train)
+                                     fit = function(X, y){
+                                       df <- prepareDataset(X, y)
+                                       df$y <- as.factor(df$y)
+                                       private$model <- caret::knn3(y ~ ., data = df, k=private$k)
+                                       private$isFitted <- TRUE
+                                       invisible(self)
+                                     },
+                                     #' @description Predict regression value for X0.
+                                     #'
+                                     #' @param X0 2D matrix or dataframe that includes predictors
+                                     #'
+                                     #' @return A vector of the predicted classes.
+                                     #'
+                                     #' @examples
+                                     #' knc <- KNeighborsClassifier$new()
+                                     #' knc$fit(X_train, y_train)
+                                     #' preds <- knc$predict(X_test)
+                                     #'
+                                     #' knc <- KNeighborsClassifier$new()
+                                     #' preds <- knc$fit(X_train, y_train)$predict(X_test)
+                                     #'
+                                     #' preds <- KNeighborsClassifier$new()$fit(X_train, y_train)$predict(X_test)
+                                     #' print(caret::confusionMatrix(data=factor(preds), reference = factor(y_test)))
+                                     predict = function(X0){
+                                       check_is_fitted(self)
+                                       data <- prepareXset(X0)
+                                       predict(private$model, data, type = "class")
+                                     },
+                                     #' @description Auxiliary function returning the estimator type e.g 'regressor', 'classifier'
+                                     get_estimator_type = function() {
+                                       return(private$estimator_type)
+                                     }
+                                   ))
+
