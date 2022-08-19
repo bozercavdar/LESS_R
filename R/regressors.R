@@ -60,7 +60,7 @@ SklearnEstimator <- R6::R6Class(classname = "SklearnEstimator",
                                 inherit = BaseEstimator,
                                 private = list(
                                   type = "estimator",
-                                  isFitted = FALSE,
+                                  isFitted = FALSE
                                 ),
                                 public = list(
                                   #' @description Dummy fit function
@@ -79,7 +79,7 @@ SklearnEstimator <- R6::R6Class(classname = "SklearnEstimator",
                                   #' @description Auxiliary function returning the isFitted flag
                                   get_isFitted = function(){
                                     return(private$isFitted)
-                                  },
+                                  }
                                 )
 )
 
@@ -266,7 +266,7 @@ DecisionTreeRegressor <- R6::R6Class(classname = "DecisionTreeRegressor",
                                        get_estimator_type = function() {
                                          return(private$estimator_type)
                                        }
-                                     )
+                                     ))
 
 #' @title RandomForestRegressor
 #'

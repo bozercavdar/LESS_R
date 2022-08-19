@@ -18,6 +18,7 @@ A dummy base R6 class that includes fit, predict functions for estimators
 \item \href{#method-SklearnEstimator-fit}{\code{SklearnEstimator$fit()}}
 \item \href{#method-SklearnEstimator-predict}{\code{SklearnEstimator$predict()}}
 \item \href{#method-SklearnEstimator-get_type}{\code{SklearnEstimator$get_type()}}
+\item \href{#method-SklearnEstimator-get_isFitted}{\code{SklearnEstimator$get_isFitted()}}
 \item \href{#method-SklearnEstimator-clone}{\code{SklearnEstimator$clone()}}
 }
 }
@@ -57,6 +58,16 @@ Dummy predict function
 Auxiliary function returning the type of the class e.g 'estimator'
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{SklearnEstimator$get_type()}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-SklearnEstimator-get_isFitted"></a>}}
+\if{latex}{\out{\hypertarget{method-SklearnEstimator-get_isFitted}{}}}
+\subsection{Method \code{get_isFitted()}}{
+Auxiliary function returning the isFitted flag
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{SklearnEstimator$get_isFitted()}\if{html}{\out{</div>}}
 }
 
 }
