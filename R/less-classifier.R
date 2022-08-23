@@ -520,7 +520,6 @@ LESSClassifier <- R6::R6Class(classname = "LESSClassifier",
                                 #' lessclassifier <- LESSClassifier$new()
                                 #' lessclassifier$fit(X_train, y_train)
                                 fit = function(X, y){
-
                                   if(private$scaling){
                                     private$scobject <- StandardScaler$new()
                                     X <- private$scobject$fit_transform(X)

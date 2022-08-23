@@ -5,6 +5,7 @@ StandardScaler <- R6::R6Class(classname = "StandardScaler",
                               ),
                               public = list(
                                 fit = function(X) {
+                                  check_matrix(X)
                                   # standart deviation function for internal use
                                   # the default stdev() function of R, divides by length(ln)-1
                                   standart_dev <- function(ln) {
@@ -16,6 +17,7 @@ StandardScaler <- R6::R6Class(classname = "StandardScaler",
                                   invisible(self)
                                 },
                                 transform = function(X) {
+                                  check_matrix(X)
                                   # append mean and standart deviation values to the X matrix
                                   merged <- rbind(private$mean, private$stdev, X)
                                   # standardize each value by the corresponding mean and stdev values
