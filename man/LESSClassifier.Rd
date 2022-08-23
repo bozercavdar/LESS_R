@@ -50,6 +50,7 @@ print(caret::confusionMatrix(data=factor(preds), reference = factor(y_test)))
 \item \href{#method-LESSClassifier-new}{\code{LESSClassifier$new()}}
 \item \href{#method-LESSClassifier-fit}{\code{LESSClassifier$fit()}}
 \item \href{#method-LESSClassifier-predict}{\code{LESSClassifier$predict()}}
+\item \href{#method-LESSClassifier-get_estimator_type}{\code{LESSClassifier$get_estimator_type()}}
 \item \href{#method-LESSClassifier-clone}{\code{LESSClassifier$clone()}}
 }
 }
@@ -211,6 +212,16 @@ print(caret::confusionMatrix(data=factor(preds), reference = factor(y_test)))
 }
 \if{html}{\out{</div>}}
 
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-LESSClassifier-get_estimator_type"></a>}}
+\if{latex}{\out{\hypertarget{method-LESSClassifier-get_estimator_type}{}}}
+\subsection{Method \code{get_estimator_type()}}{
+Auxiliary function returning the estimator type e.g 'regressor', 'classifier'
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{LESSClassifier$get_estimator_type()}\if{html}{\out{</div>}}
 }
 
 }

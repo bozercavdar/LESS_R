@@ -625,6 +625,7 @@ LESSBase <- R6::R6Class(classname = "LESSBase",
 LESSRegressor <- R6::R6Class(classname = "LESSRegressor",
                              inherit = LESSBase,
                              private = list(
+                               estimator_type = "regressor",
                                frac = NULL,
                                n_neighbors = NULL,
                                n_subsets = NULL,
@@ -804,5 +805,9 @@ LESSRegressor <- R6::R6Class(classname = "LESSRegressor",
                                  yhat <- yhat/private$n_replications
 
                                  return(yhat)
+                               },
+                               #' @description Auxiliary function returning the estimator type e.g 'regressor', 'classifier'
+                               get_estimator_type = function() {
+                                 return(private$estimator_type)
                                }
                              ))

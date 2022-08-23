@@ -60,6 +60,7 @@ print(head(matrix(c(y_test, preds), ncol = 2, dimnames = (list(NULL, c("True", "
 \item \href{#method-LESSRegressor-new}{\code{LESSRegressor$new()}}
 \item \href{#method-LESSRegressor-fit}{\code{LESSRegressor$fit()}}
 \item \href{#method-LESSRegressor-predict}{\code{LESSRegressor$predict()}}
+\item \href{#method-LESSRegressor-get_estimator_type}{\code{LESSRegressor$get_estimator_type()}}
 \item \href{#method-LESSRegressor-clone}{\code{LESSRegressor$clone()}}
 }
 }
@@ -232,6 +233,16 @@ print(head(matrix(c(y_test, preds), ncol = 2, dimnames = (list(NULL, c("True", "
 }
 \if{html}{\out{</div>}}
 
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-LESSRegressor-get_estimator_type"></a>}}
+\if{latex}{\out{\hypertarget{method-LESSRegressor-get_estimator_type}{}}}
+\subsection{Method \code{get_estimator_type()}}{
+Auxiliary function returning the estimator type e.g 'regressor', 'classifier'
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{LESSRegressor$get_estimator_type()}\if{html}{\out{</div>}}
 }
 
 }

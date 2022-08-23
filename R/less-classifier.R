@@ -415,6 +415,7 @@ LESSBinaryClassifier <- R6::R6Class(classname = "LESSBinaryClassifier",
 LESSClassifier <- R6::R6Class(classname = "LESSClassifier",
                               inherit = LESSBase,
                               private = list(
+                                estimator_type = "classifier",
                                 frac = NULL,
                                 n_neighbors = NULL,
                                 n_subsets = NULL,
@@ -554,6 +555,10 @@ LESSClassifier <- R6::R6Class(classname = "LESSClassifier",
                                     X0 <- private$scobject$transform(X0)
                                   }
                                   private$strategy$predict(X0)
+                                },
+                                #' @description Auxiliary function returning the estimator type e.g 'regressor', 'classifier'
+                                get_estimator_type = function() {
+                                  return(private$estimator_type)
                                 }
                               )
 )

@@ -353,3 +353,57 @@ get_functions = function(){
     cat("-", help, "\n")
   }
 }
+
+#' @title k-Fold Cross Validation
+#'
+#' @description Applies k-Fold cross validation to the given model on the given data
+#'
+#' @param data The dataset to be used
+#' @param model A classification or a regression model (from LESS package)
+#' @param random_state A seed number to get reproducable result
+#' @param k Number of splits on the training set (defaults to 5)
+#' @param y_index Column index of the response variable on the given \strong{data}. Default is the last column.
+#'
+#' @return A vector consists of metric of the individual folds and the average metric over the folds
+#'
+#' @export
+#'
+#' @examples
+#' k_fold_cv(data = abalone, model = LESSRegressor$new(), k = 10)
+#' k_fold_cv(data = iris, model = LESSClassifier$new(), k = 3)
+k_fold_cv = function(data = NULL, model = NULL, random_state = NULL, k = 5, y_index = ncol(data)){
+  if(is.null(model) | is.null(data)){
+    stop("The given data or model is NULL.")
+  }
+  split_list <- train_test_split(data, test_size =  0.3, random_state = random_state, y_index = y_index)
+  X_train <- split_list[[1]]
+  X_test <- split_list[[2]]
+  y_train <- split_list[[3]]
+  y_test <- split_list[[4]]
+
+  training <- prepareDataset(X_train, y_train)
+  shuffled <- training[sample(nrow(training)),]
+  splits <- suppressWarnings(split(shuffled, rep(1:k, each = as.integer(nrow(shuffled)/k))))
+  metric_list <- matrix(0, 1, k)
+  for (i in 1:k) {
+    split_list <- train_test_split(splits[[i]], random_state = random_state, test_size =  0.3, y_index = 1)
+    X_train_split <- split_list[[1]]
+    X_test_split <- split_list[[2]]
+    y_train_split <- split_list[[3]]
+    y_test_split <- split_list[[4]]
+
+    if('random_state' %in% (model$get_all_fields())) {
+      model$set_random_state(random_state)
+    }
+
+    preds <- model$fit(X_train_split, y_train_split)$predict(X_test_split)
+    if(is_classifier(model)){
+      result <- caret::confusionMatrix(data=factor(preds), reference = factor(y_test_split))
+      metric_list[i] <- result$overall["Accuracy"]
+    }else if(is_regressor(model)){
+      metric_list[i] <- MLmetrics::MSE(preds, y_test_split)
+    }
+  }
+  return(c("metric_list" = metric_list,
+           "Mean" = mean(metric_list)))
+}
