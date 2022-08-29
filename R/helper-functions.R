@@ -388,7 +388,7 @@ k_fold_cv = function(data = NULL, model = NULL, random_state = NULL, k = 5, y_in
   metric_list <- matrix(0, 1, k)
   for (i in 1:k) {
     test_fold <- splits[[i]] # take each group of k as a test dataset
-    train_folds <- Reduce(merge, splits[-i]) # take the rest of the groups as training data set
+    train_folds <- Reduce(rbind, splits[-i]) # take the rest of the groups as training data set
 
     X_train_split <- train_folds[,-1]
     X_test_split <- test_fold[,-1]
