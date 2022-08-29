@@ -386,6 +386,15 @@ LESSBinaryClassifier <- R6::R6Class(classname = "LESSBinaryClassifier",
                                       #' @description Auxiliary function returning the global_estimator
                                       get_global_estimator = function(){
                                         return(private$global_estimator)
+                                      },
+                                      #' @description Auxiliary function that sets random state attribute of the self class
+                                      #'
+                                      #' @param random_state seed number to be set as random state
+                                      #' @return self
+                                      set_random_state = function(random_state) {
+                                        private$random_state <- random_state
+                                        private$rng = RandomGenerator$new(random_state = private$random_state)
+                                        invisible(self)
                                       }
                                     ))
 
@@ -559,6 +568,15 @@ LESSClassifier <- R6::R6Class(classname = "LESSClassifier",
                                 #' @description Auxiliary function returning the estimator type e.g 'regressor', 'classifier'
                                 get_estimator_type = function() {
                                   return(private$estimator_type)
+                                },
+                                #' @description Auxiliary function that sets random state attribute of the self class
+                                #'
+                                #' @param random_state seed number to be set as random state
+                                #' @return self
+                                set_random_state = function(random_state) {
+                                  private$random_state <- random_state
+                                  private$bclassifier$set_random_state(private$random_state)
+                                  invisible(self)
                                 }
                               )
 )

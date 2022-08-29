@@ -19,6 +19,7 @@ Auxiliary binary classifier for Learning with Subset Selection (LESS)
 \item \href{#method-LESSBinaryClassifier-fit}{\code{LESSBinaryClassifier$fit()}}
 \item \href{#method-LESSBinaryClassifier-predict_proba}{\code{LESSBinaryClassifier$predict_proba()}}
 \item \href{#method-LESSBinaryClassifier-get_global_estimator}{\code{LESSBinaryClassifier$get_global_estimator()}}
+\item \href{#method-LESSBinaryClassifier-set_random_state}{\code{LESSBinaryClassifier$set_random_state()}}
 \item \href{#method-LESSBinaryClassifier-clone}{\code{LESSBinaryClassifier$clone()}}
 }
 }
@@ -27,7 +28,6 @@ Auxiliary binary classifier for Learning with Subset Selection (LESS)
 <ul>
 <li><span class="pkg-link" data-pkg="less" data-topic="BaseEstimator" data-id="get_all_fields"><a href='../../less/html/BaseEstimator.html#method-BaseEstimator-get_all_fields'><code>less::BaseEstimator$get_all_fields()</code></a></li>
 <li><span class="pkg-link" data-pkg="less" data-topic="BaseEstimator" data-id="get_attributes"><a href='../../less/html/BaseEstimator.html#method-BaseEstimator-get_attributes'><code>less::BaseEstimator$get_attributes()</code></a></li>
-<li><span class="pkg-link" data-pkg="less" data-topic="BaseEstimator" data-id="set_random_state"><a href='../../less/html/BaseEstimator.html#method-BaseEstimator-set_random_state'><code>less::BaseEstimator$set_random_state()</code></a></li>
 <li><span class="pkg-link" data-pkg="less" data-topic="SklearnEstimator" data-id="get_type"><a href='../../less/html/SklearnEstimator.html#method-SklearnEstimator-get_type'><code>less::SklearnEstimator$get_type()</code></a></li>
 <li><span class="pkg-link" data-pkg="less" data-topic="SklearnEstimator" data-id="predict"><a href='../../less/html/SklearnEstimator.html#method-SklearnEstimator-predict'><code>less::SklearnEstimator$predict()</code></a></li>
 <li><span class="pkg-link" data-pkg="less" data-topic="LESSBase" data-id="get_d_normalize"><a href='../../less/html/LESSBase.html#method-LESSBase-get_d_normalize'><code>less::LESSBase$get_d_normalize()</code></a></li>
@@ -158,6 +158,26 @@ Auxiliary function returning the global_estimator
 \if{html}{\out{<div class="r">}}\preformatted{LESSBinaryClassifier$get_global_estimator()}\if{html}{\out{</div>}}
 }
 
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-LESSBinaryClassifier-set_random_state"></a>}}
+\if{latex}{\out{\hypertarget{method-LESSBinaryClassifier-set_random_state}{}}}
+\subsection{Method \code{set_random_state()}}{
+Auxiliary function that sets random state attribute of the self class
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{LESSBinaryClassifier$set_random_state(random_state)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{random_state}}{seed number to be set as random state}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+self
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-LESSBinaryClassifier-clone"></a>}}

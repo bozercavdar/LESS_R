@@ -375,23 +375,27 @@ k_fold_cv = function(data = NULL, model = NULL, random_state = NULL, k = 5, y_in
   if(is.null(model) | is.null(data)){
     stop("The given data or model is NULL.")
   }
+  #train-test splitting
   split_list <- train_test_split(data, test_size =  0.3, random_state = random_state, y_index = y_index)
   X_train <- split_list[[1]]
   X_test <- split_list[[2]]
   y_train <- split_list[[3]]
   y_test <- split_list[[4]]
 
-  training <- prepareDataset(X_train, y_train)
-  shuffled <- training[sample(nrow(training)),]
-  splits <- suppressWarnings(split(shuffled, rep(1:k, each = as.integer(nrow(shuffled)/k))))
+  training <- prepareDataset(X_train, y_train) #combine trainset
+  shuffled <- training[sample(nrow(training)),] #shuffle trainset
+  splits <- suppressWarnings(split(shuffled, rep(1:k, each = as.integer(nrow(shuffled)/k)))) #split the trainset into k-different sets
   metric_list <- matrix(0, 1, k)
   for (i in 1:k) {
-    split_list <- train_test_split(splits[[i]], random_state = random_state, test_size =  0.3, y_index = 1)
-    X_train_split <- split_list[[1]]
-    X_test_split <- split_list[[2]]
-    y_train_split <- split_list[[3]]
-    y_test_split <- split_list[[4]]
+    test_fold <- splits[[i]] # take each group of k as a test dataset
+    train_folds <- Reduce(merge, splits[-i]) # take the rest of the groups as training data set
 
+    X_train_split <- train_folds[,-1]
+    X_test_split <- test_fold[,-1]
+    y_train_split <- train_folds[,1]
+    y_test_split <- test_fold[,1]
+
+    # if the model has random_state, set the random state
     if('random_state' %in% (model$get_all_fields())) {
       model$set_random_state(random_state)
     }

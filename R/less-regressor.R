@@ -547,6 +547,16 @@ LESSBase <- R6::R6Class(classname = "LESSBase",
                           cat("Number of samples in each subset: ", private$n_neighbors, "\n")
                         },
 
+                        #' @description Auxiliary function that sets random state attribute of the self class
+                        #'
+                        #' @param random_state seed number to be set as random state
+                        #' @return self
+                        set_random_state = function(random_state) {
+                          private$random_state <- random_state
+                          private$rng = RandomGenerator$new(random_state = private$random_state)
+                          invisible(self)
+                        },
+
                         #' @description  Auxiliary function returning the number of subsets
                         get_n_subsets = function(){
                           return(private$n_subsets)

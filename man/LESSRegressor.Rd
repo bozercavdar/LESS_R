@@ -69,7 +69,6 @@ print(head(matrix(c(y_test, preds), ncol = 2, dimnames = (list(NULL, c("True", "
 <ul>
 <li><span class="pkg-link" data-pkg="less" data-topic="BaseEstimator" data-id="get_all_fields"><a href='../../less/html/BaseEstimator.html#method-BaseEstimator-get_all_fields'><code>less::BaseEstimator$get_all_fields()</code></a></li>
 <li><span class="pkg-link" data-pkg="less" data-topic="BaseEstimator" data-id="get_attributes"><a href='../../less/html/BaseEstimator.html#method-BaseEstimator-get_attributes'><code>less::BaseEstimator$get_attributes()</code></a></li>
-<li><span class="pkg-link" data-pkg="less" data-topic="BaseEstimator" data-id="set_random_state"><a href='../../less/html/BaseEstimator.html#method-BaseEstimator-set_random_state'><code>less::BaseEstimator$set_random_state()</code></a></li>
 <li><span class="pkg-link" data-pkg="less" data-topic="SklearnEstimator" data-id="get_type"><a href='../../less/html/SklearnEstimator.html#method-SklearnEstimator-get_type'><code>less::SklearnEstimator$get_type()</code></a></li>
 <li><span class="pkg-link" data-pkg="less" data-topic="LESSBase" data-id="get_d_normalize"><a href='../../less/html/LESSBase.html#method-LESSBase-get_d_normalize'><code>less::LESSBase$get_d_normalize()</code></a></li>
 <li><span class="pkg-link" data-pkg="less" data-topic="LESSBase" data-id="get_frac"><a href='../../less/html/LESSBase.html#method-LESSBase-get_frac'><code>less::LESSBase$get_frac()</code></a></li>
@@ -82,6 +81,7 @@ print(head(matrix(c(y_test, preds), ncol = 2, dimnames = (list(NULL, c("True", "
 <li><span class="pkg-link" data-pkg="less" data-topic="LESSBase" data-id="get_scaling"><a href='../../less/html/LESSBase.html#method-LESSBase-get_scaling'><code>less::LESSBase$get_scaling()</code></a></li>
 <li><span class="pkg-link" data-pkg="less" data-topic="LESSBase" data-id="get_val_size"><a href='../../less/html/LESSBase.html#method-LESSBase-get_val_size'><code>less::LESSBase$get_val_size()</code></a></li>
 <li><span class="pkg-link" data-pkg="less" data-topic="LESSBase" data-id="print"><a href='../../less/html/LESSBase.html#method-LESSBase-print'><code>less::LESSBase$print()</code></a></li>
+<li><span class="pkg-link" data-pkg="less" data-topic="LESSBase" data-id="set_random_state"><a href='../../less/html/LESSBase.html#method-LESSBase-set_random_state'><code>less::LESSBase$set_random_state()</code></a></li>
 </ul>
 </details>
 }}

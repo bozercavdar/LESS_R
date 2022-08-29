@@ -51,6 +51,7 @@ print(caret::confusionMatrix(data=factor(preds), reference = factor(y_test)))
 \item \href{#method-LESSClassifier-fit}{\code{LESSClassifier$fit()}}
 \item \href{#method-LESSClassifier-predict}{\code{LESSClassifier$predict()}}
 \item \href{#method-LESSClassifier-get_estimator_type}{\code{LESSClassifier$get_estimator_type()}}
+\item \href{#method-LESSClassifier-set_random_state}{\code{LESSClassifier$set_random_state()}}
 \item \href{#method-LESSClassifier-clone}{\code{LESSClassifier$clone()}}
 }
 }
@@ -59,7 +60,6 @@ print(caret::confusionMatrix(data=factor(preds), reference = factor(y_test)))
 <ul>
 <li><span class="pkg-link" data-pkg="less" data-topic="BaseEstimator" data-id="get_all_fields"><a href='../../less/html/BaseEstimator.html#method-BaseEstimator-get_all_fields'><code>less::BaseEstimator$get_all_fields()</code></a></li>
 <li><span class="pkg-link" data-pkg="less" data-topic="BaseEstimator" data-id="get_attributes"><a href='../../less/html/BaseEstimator.html#method-BaseEstimator-get_attributes'><code>less::BaseEstimator$get_attributes()</code></a></li>
-<li><span class="pkg-link" data-pkg="less" data-topic="BaseEstimator" data-id="set_random_state"><a href='../../less/html/BaseEstimator.html#method-BaseEstimator-set_random_state'><code>less::BaseEstimator$set_random_state()</code></a></li>
 <li><span class="pkg-link" data-pkg="less" data-topic="SklearnEstimator" data-id="get_type"><a href='../../less/html/SklearnEstimator.html#method-SklearnEstimator-get_type'><code>less::SklearnEstimator$get_type()</code></a></li>
 <li><span class="pkg-link" data-pkg="less" data-topic="LESSBase" data-id="get_d_normalize"><a href='../../less/html/LESSBase.html#method-LESSBase-get_d_normalize'><code>less::LESSBase$get_d_normalize()</code></a></li>
 <li><span class="pkg-link" data-pkg="less" data-topic="LESSBase" data-id="get_frac"><a href='../../less/html/LESSBase.html#method-LESSBase-get_frac'><code>less::LESSBase$get_frac()</code></a></li>
@@ -224,6 +224,26 @@ Auxiliary function returning the estimator type e.g 'regressor', 'classifier'
 \if{html}{\out{<div class="r">}}\preformatted{LESSClassifier$get_estimator_type()}\if{html}{\out{</div>}}
 }
 
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-LESSClassifier-set_random_state"></a>}}
+\if{latex}{\out{\hypertarget{method-LESSClassifier-set_random_state}{}}}
+\subsection{Method \code{set_random_state()}}{
+Auxiliary function that sets random state attribute of the self class
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{LESSClassifier$set_random_state(random_state)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{random_state}}{seed number to be set as random state}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+self
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-LESSClassifier-clone"></a>}}
