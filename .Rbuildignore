@@ -1,2 +1,4 @@
-^lessTest\.Rproj$
+^.*\.Rproj$
 ^\.Rproj\.user$
+^img$
+^cran-comments\.md$

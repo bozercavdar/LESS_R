@@ -168,6 +168,7 @@ OutputCodeClassifier <- R6::R6Class(classname = "OutputCodeClassifier",
                                         private$isFitted <- TRUE
                                         invisible(self)
                                       },
+                                      #' @importFrom pracma distmat
                                       predict = function(X0){
                                         check_is_fitted(self)
                                         data <- prepareXset(X0)
