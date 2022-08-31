@@ -261,59 +261,6 @@ getMode <- function(v) {
   return(c(mode, count))
 }
 
-#' @title Synthetic Sine Curve
-#'
-#' @description A simple function to generate n_samples from sine curve in the range (-10, 10) with some amplitude.
-#' The function returns the dataset (X, y), and plots the function (curve) along with the dataset (circles)
-#'
-#' @param n_samples Number of data points to be generated
-#'
-#' @export
-synthetic_sine_curve = function(n_samples=200) {
-  xvals <- seq(-10,10,length.out=n_samples+1)[-(n_samples+1)]
-
-  X <- rep(0, n_samples)
-  y <- rep(0, n_samples)
-  for(i in 1:n_samples){
-    xran <- -10 + 20*runif(1)
-    X[i] <- xran
-    y[i] <- 10*sin(xran) + 2.5*rnorm(1)
-  }
-  dev.new(width=960, height=540, unit = "px", noRStudioGD = TRUE)
-  plot(xvals, 10*sin(xvals), type = "l", col="red", ylab="",yaxt="n", xlab="",xaxt="n")
-  par(new=TRUE)
-  plot(X, y, pch = 19, col="blue",  ylab="",yaxt="n", xlab="",xaxt="n")
-  par(new=FALSE)
-
-  return(list(X, y))
-}
-
-#' @title Comparsion Plot
-#'
-#' @description Plots the fitted functions obtained with various regressors (using their default values) on the
-#' one-dimensional dataset (X, y).
-#'
-#' @param X Predictors
-#' @param y Response variables
-#' @param model_list List of models to be compared
-#'
-#' @export
-comparison_plot = function(X, y, model_list){
-  xlb <- floor(min(X)-1)
-  xub <- floor(max(X)+1)
-  xvals <- seq(xlb, xub, by=0.1)
-  color_list <- c("blue", "green", "red", "black", "brown", "purple", "orange", "seagreen2", "pink")
-  color_index <- 1
-  par(mfrow=c(length(model_list)/2+1, 2))
-  plot(X, y, main = "True", pch = 19, col=color_list[color_index], ylab="",yaxt="n", xlab="",xaxt="n")
-  # par(new=TRUE)
-  for (model in model_list) {
-    color_index <- color_index + 1
-    y_pred <- model$fit(X, y)$predict(prepareXset(xvals))
-    plot(xvals, y_pred, main=getClassName(model), type="l", lwd = 2, pch = 19, col=color_list[color_index],  ylab="",yaxt="n", xlab="",xaxt="n")
-  }
-}
-
 #' @title Get Functions
 #'
 #' @description Prints the available regressors, clustering methods, tree functions and helper functions within LESS package.
