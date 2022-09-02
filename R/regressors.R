@@ -442,6 +442,14 @@ KNeighborsRegressor <- R6::R6Class(classname = "KNeighborsRegressor",
 #'
 #' @description Wrapper R6 Class of e1071::svm function that can be used for LESSRegressor and LESSClassifier
 #'
+#' @param kernel The kernel used in training and predicting. Possible values are: "linear", "polynomial", "radial", "sigmoid" (default is "radial")
+#' @param degree Parameter needed for kernel of type polynomial (default: 3)
+#' @param gamma Parameter needed for all kernels except linear (default: 1/(data dimension))
+#' @param coef0 Parameter needed for kernels of type polynomial and sigmoid (default: 0)
+#' @param tolerance Tolerance of termination criterion (default: 0.001)
+#' @param epsilon Epsilon in the insensitive-loss function (default: 0.1)
+#' @param shrinking Option whether to use the shrinking-heuristics (default: TRUE)
+#'
 #' @return R6 Class of SVR
 #' @seealso [e1071::svm()]
 #' @importFrom e1071 svm
@@ -450,9 +458,31 @@ SVR <- R6::R6Class(classname = "SVR",
                    inherit = SklearnEstimator,
                    private = list(
                      estimator_type = "regressor",
-                     model = NULL
+                     model = NULL,
+                     kernel = NULL,
+                     degree = NULL,
+                     gamma = NULL,
+                     coef0 = NULL,
+                     tolerance = NULL,
+                     epsilon = NULL,
+                     shrinking = NULL
                    ),
                    public = list(
+                     #' @description Creates a new instance of R6 Class of SVR
+                     #'
+                     #' @examples
+                     #' svr <- SVR$new()
+                     #' svr <- SVR$new(kernel = "polynomial")
+                     initialize = function(kernel = "radial", degree = 3, gamma = NULL, coef0 = 0, tolerance = 0.001,
+                                           epsilon = 0.1, shrinking = TRUE){
+                       private$kernel = kernel
+                       private$degree = degree
+                       private$gamma = gamma
+                       private$coef0 = coef0
+                       private$tolerance = tolerance
+                       private$epsilon = epsilon
+                       private$shrinking = shrinking
+                     },
                      #' @description Fit the SVM model from the training set (X, y).
                      #'
                      #' @param X 2D matrix or dataframe that includes predictors
@@ -472,7 +502,11 @@ SVR <- R6::R6Class(classname = "SVR",
                      #' svr$fit(X_train, y_train)
                      fit = function(X, y){
                        df <- prepareDataset(X, y)
-                       private$model <- e1071::svm(y ~ ., data = df)
+                       gamma = if (is.vector(X)) 1 else 1 / ncol(X)
+                       private$model <- e1071::svm(y ~ ., data = df, kernel = private$kernel, degree = private$degree,
+                                                   gamma = if (is.null(private$gamma)) gamma else private$gamma,
+                                                   coef0 = private$coef0, tolerance = private$tolerance, epsilon = private$epsilon,
+                                                   shrinking = private$shrinking)
                        private$isFitted <- TRUE
                        invisible(self)
                      },

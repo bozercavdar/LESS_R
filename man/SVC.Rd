@@ -12,6 +12,13 @@ Wrapper R6 Class of e1071::svm function that can be used for LESSRegressor and L
 \examples{
 
 ## ------------------------------------------------
+## Method `SVC$new`
+## ------------------------------------------------
+
+svc <- SVC$new()
+svc <- SVC$new(kernel = "polynomial")
+
+## ------------------------------------------------
 ## Method `SVC$fit`
 ## ------------------------------------------------
 
@@ -48,6 +55,7 @@ print(caret::confusionMatrix(data=preds, reference = factor(y_test)))
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
+\item \href{#method-SVC-new}{\code{SVC$new()}}
 \item \href{#method-SVC-fit}{\code{SVC$fit()}}
 \item \href{#method-SVC-predict}{\code{SVC$predict()}}
 \item \href{#method-SVC-get_estimator_type}{\code{SVC$get_estimator_type()}}
@@ -65,6 +73,52 @@ print(caret::confusionMatrix(data=preds, reference = factor(y_test)))
 </ul>
 </details>
 }}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-SVC-new"></a>}}
+\if{latex}{\out{\hypertarget{method-SVC-new}{}}}
+\subsection{Method \code{new()}}{
+Creates a new instance of R6 Class of SVC
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{SVC$new(
+  kernel = "radial",
+  degree = 3,
+  gamma = NULL,
+  coef0 = 0,
+  tolerance = 0.001,
+  epsilon = 0.1,
+  shrinking = TRUE
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{kernel}}{The kernel used in training and predicting. Possible values are: "linear", "polynomial", "radial", "sigmoid" (default is "radial")}
+
+\item{\code{degree}}{Parameter needed for kernel of type polynomial (default: 3)}
+
+\item{\code{gamma}}{Parameter needed for all kernels except linear (default: 1/(data dimension))}
+
+\item{\code{coef0}}{Parameter needed for kernels of type polynomial and sigmoid (default: 0)}
+
+\item{\code{tolerance}}{Tolerance of termination criterion (default: 0.001)}
+
+\item{\code{epsilon}}{Epsilon in the insensitive-loss function (default: 0.1)}
+
+\item{\code{shrinking}}{Option whether to use the shrinking-heuristics (default: TRUE)}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Examples}{
+\if{html}{\out{<div class="r example copy">}}
+\preformatted{svc <- SVC$new()
+svc <- SVC$new(kernel = "polynomial")
+}
+\if{html}{\out{</div>}}
+
+}
+
+}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-SVC-fit"></a>}}
 \if{latex}{\out{\hypertarget{method-SVC-fit}{}}}

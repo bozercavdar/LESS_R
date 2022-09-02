@@ -12,6 +12,13 @@ Wrapper R6 Class of e1071::svm function that can be used for LESSRegressor and L
 \examples{
 
 ## ------------------------------------------------
+## Method `SVR$new`
+## ------------------------------------------------
+
+svr <- SVR$new()
+svr <- SVR$new(kernel = "polynomial")
+
+## ------------------------------------------------
 ## Method `SVR$fit`
 ## ------------------------------------------------
 
@@ -48,6 +55,7 @@ print(head(matrix(c(y_test, preds), ncol = 2, dimnames = (list(NULL, c("True", "
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
+\item \href{#method-SVR-new}{\code{SVR$new()}}
 \item \href{#method-SVR-fit}{\code{SVR$fit()}}
 \item \href{#method-SVR-predict}{\code{SVR$predict()}}
 \item \href{#method-SVR-get_estimator_type}{\code{SVR$get_estimator_type()}}
@@ -65,6 +73,52 @@ print(head(matrix(c(y_test, preds), ncol = 2, dimnames = (list(NULL, c("True", "
 </ul>
 </details>
 }}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-SVR-new"></a>}}
+\if{latex}{\out{\hypertarget{method-SVR-new}{}}}
+\subsection{Method \code{new()}}{
+Creates a new instance of R6 Class of SVR
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{SVR$new(
+  kernel = "radial",
+  degree = 3,
+  gamma = NULL,
+  coef0 = 0,
+  tolerance = 0.001,
+  epsilon = 0.1,
+  shrinking = TRUE
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{kernel}}{The kernel used in training and predicting. Possible values are: "linear", "polynomial", "radial", "sigmoid" (default is "radial")}
+
+\item{\code{degree}}{Parameter needed for kernel of type polynomial (default: 3)}
+
+\item{\code{gamma}}{Parameter needed for all kernels except linear (default: 1/(data dimension))}
+
+\item{\code{coef0}}{Parameter needed for kernels of type polynomial and sigmoid (default: 0)}
+
+\item{\code{tolerance}}{Tolerance of termination criterion (default: 0.001)}
+
+\item{\code{epsilon}}{Epsilon in the insensitive-loss function (default: 0.1)}
+
+\item{\code{shrinking}}{Option whether to use the shrinking-heuristics (default: TRUE)}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Examples}{
+\if{html}{\out{<div class="r example copy">}}
+\preformatted{svr <- SVR$new()
+svr <- SVR$new(kernel = "polynomial")
+}
+\if{html}{\out{</div>}}
+
+}
+
+}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-SVR-fit"></a>}}
 \if{latex}{\out{\hypertarget{method-SVR-fit}{}}}
