@@ -274,7 +274,7 @@ get_functions = function(){
   classifier_list <- c("DecisionTreeClassifier", "SVC", "RandomForestClassifier", "KNeighborsClassifier")
   clustering_list <- c("HierarchicalClustering", "KMeans")
   tree_list <- c("CoverTree", "KDTree")
-  helper_function_list <- c("laplacian", "rbf", "train_test_split")
+  helper_function_list <- c("laplacian", "rbf", "train_test_split", "k_fold_cv")
   cat("Regressors within LESS Package:", "\n")
   for(reg in regressor_list){
     cat("-", reg, "\n")
