@@ -541,9 +541,12 @@ LESSClassifier <- R6::R6Class(classname = "LESSClassifier",
                                   n_classes <- length(unique(y))
                                   private$set_strategy(n_classes)
                                   private$strategy$fit(X, y)
-                                  first_estimator <- private$strategy$get_estimators()[[1]]
-                                  if(getClassName(first_estimator) == "LESSBinaryClassifier"){
-                                    private$update_params(first_estimator, n_classes)
+
+                                  for(estimator in private$strategy$get_estimators()){
+                                    if(getClassName(estimator) == "LESSBinaryClassifier"){
+                                      private$update_params(estimator, n_classes)
+                                      break
+                                    }
                                   }
 
                                   private$isFitted <- TRUE
