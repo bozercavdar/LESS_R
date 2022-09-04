@@ -50,7 +50,6 @@ print(head(matrix(c(y_test, preds), ncol = 2, dimnames = (list(NULL, c("True", "
 \itemize{
 \item \href{#method-LinearRegression-fit}{\code{LinearRegression$fit()}}
 \item \href{#method-LinearRegression-predict}{\code{LinearRegression$predict()}}
-\item \href{#method-LinearRegression-printModel}{\code{LinearRegression$printModel()}}
 \item \href{#method-LinearRegression-get_estimator_type}{\code{LinearRegression$get_estimator_type()}}
 \item \href{#method-LinearRegression-clone}{\code{LinearRegression$clone()}}
 }
@@ -137,16 +136,6 @@ print(head(matrix(c(y_test, preds), ncol = 2, dimnames = (list(NULL, c("True", "
 }
 \if{html}{\out{</div>}}
 
-}
-
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-LinearRegression-printModel"></a>}}
-\if{latex}{\out{\hypertarget{method-LinearRegression-printModel}{}}}
-\subsection{Method \code{printModel()}}{
-Auxiliary function returning the summary of the fitted model
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{LinearRegression$printModel()}\if{html}{\out{</div>}}
 }
 
 }

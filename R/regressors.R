@@ -56,6 +56,7 @@ BaseEstimator <- R6::R6Class(classname = "BaseEstimator",
 #' @description A dummy base R6 class that includes fit, predict functions for estimators
 #'
 #' @return R6 Class of SklearnEstimator
+#' @export
 SklearnEstimator <- R6::R6Class(classname = "SklearnEstimator",
                                 inherit = BaseEstimator,
                                 private = list(
@@ -164,10 +165,6 @@ LinearRegression <- R6::R6Class(classname = "LinearRegression",
                                     data <- prepareXset(X0)
                                     # in case of rank deficiency, supress related warnings
                                     suppressWarnings(predict(private$model, newdata = data))
-                                  },
-                                  #' @description Auxiliary function returning the summary of the fitted model
-                                  printModel = function() {
-                                    summary(private$model)
                                   },
                                   #' @description Auxiliary function returning the estimator type e.g 'regressor', 'classifier'
                                   get_estimator_type = function() {
