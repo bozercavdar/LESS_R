@@ -6,6 +6,7 @@
 #' @description A dummy base R6 class that provides get_all_fields, get_attributes and set_random_state functionalities for estimators
 #'
 #' @return R6 Class of BaseEstimator
+#' @export
 BaseEstimator <- R6::R6Class(classname = "BaseEstimator",
                              private = list(
                                priv_fields = function(){
