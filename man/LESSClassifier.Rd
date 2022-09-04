@@ -71,7 +71,6 @@ print(caret::confusionMatrix(data=factor(preds), reference = factor(y_test)))
 <li><span class="pkg-link" data-pkg="less" data-topic="LESSBase" data-id="get_replications"><a href='../../less/html/LESSBase.html#method-LESSBase-get_replications'><code>less::LESSBase$get_replications()</code></a></li>
 <li><span class="pkg-link" data-pkg="less" data-topic="LESSBase" data-id="get_scaling"><a href='../../less/html/LESSBase.html#method-LESSBase-get_scaling'><code>less::LESSBase$get_scaling()</code></a></li>
 <li><span class="pkg-link" data-pkg="less" data-topic="LESSBase" data-id="get_val_size"><a href='../../less/html/LESSBase.html#method-LESSBase-get_val_size'><code>less::LESSBase$get_val_size()</code></a></li>
-<li><span class="pkg-link" data-pkg="less" data-topic="LESSBase" data-id="print"><a href='../../less/html/LESSBase.html#method-LESSBase-print'><code>less::LESSBase$print()</code></a></li>
 </ul>
 </details>
 }}

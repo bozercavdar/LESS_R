@@ -540,13 +540,6 @@ LESSBase <- R6::R6Class(classname = "LESSBase",
                           private$isFitted = isFitted
                         },
 
-                        #' @description Prints detailed information of the class
-                        print = function() {
-                          n_subsets <- unlist(private$n_subsets)
-                          cat("Number of subsets: ", n_subsets, "\n")
-                          cat("Number of samples in each subset: ", private$n_neighbors, "\n")
-                        },
-
                         #' @description Auxiliary function that sets random state attribute of the self class
                         #'
                         #' @param random_state seed number to be set as random state

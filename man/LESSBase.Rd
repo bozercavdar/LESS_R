@@ -16,7 +16,6 @@ The base class for LESSRegressor and LESSClassifier
 \subsection{Public methods}{
 \itemize{
 \item \href{#method-LESSBase-new}{\code{LESSBase$new()}}
-\item \href{#method-LESSBase-print}{\code{LESSBase$print()}}
 \item \href{#method-LESSBase-set_random_state}{\code{LESSBase$set_random_state()}}
 \item \href{#method-LESSBase-get_n_subsets}{\code{LESSBase$get_n_subsets()}}
 \item \href{#method-LESSBase-get_n_neighbors}{\code{LESSBase$get_n_neighbors()}}
@@ -62,16 +61,6 @@ Creates a new instance of R6 Class of LESSBase
 }
 \if{html}{\out{</div>}}
 }
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-LESSBase-print"></a>}}
-\if{latex}{\out{\hypertarget{method-LESSBase-print}{}}}
-\subsection{Method \code{print()}}{
-Prints detailed information of the class
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{LESSBase$print()}\if{html}{\out{</div>}}
-}
-
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-LESSBase-set_random_state"></a>}}
