@@ -322,15 +322,9 @@ k_fold_cv = function(data = NULL, model = NULL, random_state = NULL, k = 5, y_in
   if(is.null(model) | is.null(data)){
     stop("The given data or model is NULL.")
   }
-  #train-test splitting
-  split_list <- train_test_split(data, test_size =  0.3, random_state = random_state, y_index = y_index)
-  X_train <- split_list[[1]]
-  X_test <- split_list[[2]]
-  y_train <- split_list[[3]]
-  y_test <- split_list[[4]]
 
-  training <- prepareDataset(X_train, y_train) #combine trainset
-  shuffled <- training[sample(nrow(training)),] #shuffle trainset
+  data <- prepareDataset(data[,-y_index], data[, y_index])
+  shuffled <- data[sample(nrow(data)),] #shuffle trainset
   splits <- suppressWarnings(split(shuffled, rep(1:k, each = as.integer(nrow(shuffled)/k)))) #split the trainset into k-different sets
   metric_list <- matrix(0, 1, k)
   for (i in 1:k) {
