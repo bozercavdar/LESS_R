@@ -7,5 +7,5 @@
 data.superconduct()
 }
 \description{
-The dataset contains data on 21263 superconductors and their relevant features.
+21623 x 82. Reference: \url{https://archive.ics.uci.edu/ml/datasets/Superconductivty+Data}
 }

@@ -1,12 +1,35 @@
 #' @title Superconduct Dataset
 #'
-#' @description The dataset contains data on 21263 superconductors and their relevant features.
+#' @description 21623 x 82. Reference: \url{https://archive.ics.uci.edu/ml/datasets/Superconductivty+Data}
 #'
 #' @importFrom utils read.csv
 #'
 #' @export
 data.superconduct = function(){
-  id <- "1rU3LlYpxSORlcKoPIniaxEdTyhfGWurN"
-  data <- read.csv(sprintf("https://docs.google.com/uc?id=%s&export=download", id), sep = ",", header = FALSE)
+  data <- read.csv(sprintf("%s/datasets/superconduct.csv", getwd()), sep = ",", header = FALSE)
+  return(data)
+}
+
+#' @title Insurance Dataset
+#'
+#' @description 5822 x 39. Reference: \url{https://archive.ics.uci.edu/ml/datasets/Insurance+Company+Benchmark+%28COIL+2000%29}
+#'
+#' @importFrom utils read.csv
+#'
+#' @export
+data.insurance = function(){
+  data <- read.csv(sprintf("%s/datasets/insurance.csv", getwd()), sep = ",", header = FALSE)
+  return(data)
+}
+
+#' @title Algerian Forest Fire Dataset
+#'
+#' @description 243 x 11. Reference: \url{https://archive.ics.uci.edu/ml/datasets/Algerian+Forest+Fires+Dataset++}
+#'
+#' @importFrom utils read.csv
+#'
+#' @export
+data.algerianForestFire = function(){
+  data <- read.csv(sprintf("%s/datasets/algeria-fire-cls.csv", getwd()), sep = ",", header = TRUE)
   return(data)
 }
