@@ -46,7 +46,15 @@ laplacian <- function(data, center, coeff=0.01){
   exp(-coeff * normRows)
 }
 
-# takes X and y datasets and merges them into a dataframe with column names
+#' @title Prepare a Dataset
+#'
+#' @description Takes X and y datasets and merges them into a dataframe with column names (y, X_1, X_2 ...)
+#'
+#' @param X Independent variables
+#' @param y Response variables
+#'
+#' @return A named dataframe which consists of X and y combined
+#' @export
 prepareDataset = function(X, y) {
   merged_data <- cbind.data.frame(y, X)
   df <- as.data.frame(merged_data)
@@ -68,7 +76,14 @@ prepareDataset = function(X, y) {
   df
 }
 
-# takes X dataset and convert it into a dataframe with column names
+#' @title Prepare a Dataset
+#'
+#' @description Takes X dataset and convert it into a dataframe with column names (X_1, X_2 ...)
+#'
+#' @param X Independent variables
+#'
+#' @return A named dataframe which consists of X
+#' @export
 prepareXset = function(X) {
   df <- as.data.frame(X)
   colX <- list()
@@ -167,7 +182,14 @@ train_test_split = function(data, test_size=0.3, random_state=NULL, y_index = nc
   return(list(X_train = X_train, X_test = X_test, y_train = y_train, y_test = y_test))
 }
 
-# checks if the given estimator is fitted
+#' @title Fitting Control
+#'
+#' @description Checks if the given estimator is fitted
+#'
+#' @param estimator An estimator with is_fitted attribute
+#'
+#' @return TRUE if the estimator is fitted, FALSE is not
+#' @export
 check_is_fitted = function(estimator){
   if(is.null(estimator$get_type())){
     stop("\tGiven estimator is not an estimator instance.")
