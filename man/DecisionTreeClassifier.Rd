@@ -84,6 +84,8 @@ Creates a new instance of R6 Class of DecisionTreeClassifier
   min_samples_split = 2,
   min_samples_leaf = 1,
   cp = 0.001,
+  xval = 10,
+  surrogate_style = 0,
   max_depth = 30
 )}\if{html}{\out{</div>}}
 }
@@ -98,6 +100,12 @@ Creates a new instance of R6 Class of DecisionTreeClassifier
 \item{\code{cp}}{Complexity Parameter. Any split that does not decrease the overall lack of fit by a factor of cp is not attempted.
 This means that the overall R-squared must increase by cp at each step. The main role of this parameter is
 to save computing time by pruning off splits that are obviously not worthwhile. (defaults to 0.001)}
+
+\item{\code{xval}}{Number of cross-validations (defaults to 10)}
+
+\item{\code{surrogate_style}}{Controls the selection of a best surrogate. If set to 0 (default) the program uses the total number of correct
+classification for a potential surrogate variable, if set to 1 it uses the percent correct, calculated over the non-missing values of the surrogate.
+The first option more severely penalizes covariates with a large number of missing values.}
 
 \item{\code{max_depth}}{The maximum depth of any node of the final tree, with the root node counted as depth 0.
 Values greater than 30 will give nonsense results on 32-bit machines.}

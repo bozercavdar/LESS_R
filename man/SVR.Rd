@@ -80,19 +80,29 @@ print(head(matrix(c(y_test, preds), ncol = 2, dimnames = (list(NULL, c("True", "
 Creates a new instance of R6 Class of SVR
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{SVR$new(
+  scale = TRUE,
   kernel = "radial",
   degree = 3,
   gamma = NULL,
   coef0 = 0,
+  cost = 1,
+  cache_size = 40,
   tolerance = 0.001,
   epsilon = 0.1,
-  shrinking = TRUE
+  shrinking = TRUE,
+  cross = 0,
+  probability = FALSE,
+  fitted = TRUE
 )}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
+\item{\code{scale}}{A logical vector indicating the variables to be scaled. If scale is of length 1, the value is recycled as many times as needed.
+Per default, data are scaled internally (both x and y variables) to zero mean and unit variance.
+The center and scale values are returned and used for later predictions (default: TRUE)}
+
 \item{\code{kernel}}{The kernel used in training and predicting. Possible values are: "linear", "polynomial", "radial", "sigmoid" (default is "radial")}
 
 \item{\code{degree}}{Parameter needed for kernel of type polynomial (default: 3)}
@@ -101,11 +111,22 @@ Creates a new instance of R6 Class of SVR
 
 \item{\code{coef0}}{Parameter needed for kernels of type polynomial and sigmoid (default: 0)}
 
+\item{\code{cost}}{Cost of constraints violation (default: 1)—it is the ‘C’-constant of the regularization term in the Lagrange formulation (default: 1)}
+
+\item{\code{cache_size}}{Cache memory in MB (default: 40)}
+
 \item{\code{tolerance}}{Tolerance of termination criterion (default: 0.001)}
 
 \item{\code{epsilon}}{Epsilon in the insensitive-loss function (default: 0.1)}
 
 \item{\code{shrinking}}{Option whether to use the shrinking-heuristics (default: TRUE)}
+
+\item{\code{cross}}{If a integer value k>0 is specified, a k-fold cross validation on the training data is performed to assess the quality of the model:
+the accuracy rate for classification and the Mean Squared Error for regression (default: 0)}
+
+\item{\code{probability}}{Logical indicating whether the model should allow for probability predictions (default: FALSE)}
+
+\item{\code{fitted}}{Logical indicating whether the fitted values should be computed and included in the model or not (default: TRUE)}
 }
 \if{html}{\out{</div>}}
 }

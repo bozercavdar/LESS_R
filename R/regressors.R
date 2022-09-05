@@ -183,6 +183,10 @@ LinearRegression <- R6::R6Class(classname = "LinearRegression",
 #' @param cp Complexity Parameter. Any split that does not decrease the overall lack of fit by a factor of cp is not attempted.
 #' This means that the overall R-squared must increase by cp at each step. The main role of this parameter is
 #' to save computing time by pruning off splits that are obviously not worthwhile. (defaults to 0.001)
+#' @param xval Number of cross-validations (defaults to 10)
+#' @param surrogate_style Controls the selection of a best surrogate. If set to 0 (default) the program uses the total number of correct
+#' classification for a potential surrogate variable, if set to 1 it uses the percent correct, calculated over the non-missing values of the surrogate.
+#' The first option more severely penalizes covariates with a large number of missing values.
 #' @param max_depth The maximum depth of any node of the final tree, with the root node counted as depth 0.
 #' Values greater than 30 will give nonsense results on 32-bit machines.
 #'
@@ -198,6 +202,8 @@ DecisionTreeRegressor <- R6::R6Class(classname = "DecisionTreeRegressor",
                                        min_samples_split = NULL,
                                        min_samples_leaf = NULL,
                                        cp = NULL,
+                                       xval = NULL,
+                                       surrogate_style = NULL,
                                        max_depth = NULL
                                      ),
                                      public = list(
@@ -207,10 +213,12 @@ DecisionTreeRegressor <- R6::R6Class(classname = "DecisionTreeRegressor",
                                        #' dt <- DecisionTreeRegressor$new()
                                        #' dt <- DecisionTreeRegressor$new(min_samples_split = 10)
                                        #' dt <- DecisionTreeRegressor$new(min_samples_leaf = 6, cp = 0.01)
-                                       initialize = function(min_samples_split = 2, min_samples_leaf = 1, cp = 0.001, max_depth = 30){
+                                       initialize = function(min_samples_split = 2, min_samples_leaf = 1, cp = 0.001, xval = 10, surrogate_style = 0, max_depth = 30){
                                          private$min_samples_split = min_samples_split
                                          private$min_samples_leaf = min_samples_leaf
                                          private$cp = cp
+                                         private$xval = xval
+                                         private$surrogate_style = surrogate_style
                                          private$max_depth = max_depth
                                        },
                                        #' @description Builds a decision tree regressor from the training set (X, y).
@@ -235,7 +243,9 @@ DecisionTreeRegressor <- R6::R6Class(classname = "DecisionTreeRegressor",
                                          private$model <- rpart::rpart(y ~ ., method = "anova", data = df,
                                                                        control = rpart::rpart.control(minsplit = private$min_samples_split,
                                                                                                       minbucket = private$min_samples_leaf,
-                                                                                                      cp = private$cp, maxdepth = private$max_depth))
+                                                                                                      cp = private$cp, xval = private$xval,
+                                                                                                      surrogatestyle = private$surrogate_style,
+                                                                                                      maxdepth = private$max_depth))
                                          private$isFitted <- TRUE
                                          invisible(self)
                                        },
@@ -440,13 +450,22 @@ KNeighborsRegressor <- R6::R6Class(classname = "KNeighborsRegressor",
 #'
 #' @description Wrapper R6 Class of e1071::svm function that can be used for LESSRegressor and LESSClassifier
 #'
+#' @param scale A logical vector indicating the variables to be scaled. If scale is of length 1, the value is recycled as many times as needed.
+#' Per default, data are scaled internally (both x and y variables) to zero mean and unit variance.
+#' The center and scale values are returned and used for later predictions (default: TRUE)
 #' @param kernel The kernel used in training and predicting. Possible values are: "linear", "polynomial", "radial", "sigmoid" (default is "radial")
 #' @param degree Parameter needed for kernel of type polynomial (default: 3)
 #' @param gamma Parameter needed for all kernels except linear (default: 1/(data dimension))
+#' @param cost Cost of constraints violation (default: 1)—it is the ‘C’-constant of the regularization term in the Lagrange formulation (default: 1)
+#' @param cache_size Cache memory in MB (default: 40)
 #' @param coef0 Parameter needed for kernels of type polynomial and sigmoid (default: 0)
 #' @param tolerance Tolerance of termination criterion (default: 0.001)
 #' @param epsilon Epsilon in the insensitive-loss function (default: 0.1)
 #' @param shrinking Option whether to use the shrinking-heuristics (default: TRUE)
+#' @param cross If a integer value k>0 is specified, a k-fold cross validation on the training data is performed to assess the quality of the model:
+#' the accuracy rate for classification and the Mean Squared Error for regression (default: 0)
+#' @param fitted Logical indicating whether the fitted values should be computed and included in the model or not (default: TRUE)
+#' @param probability Logical indicating whether the model should allow for probability predictions (default: FALSE)
 #'
 #' @return R6 Class of SVR
 #' @seealso [e1071::svm()]
@@ -457,13 +476,19 @@ SVR <- R6::R6Class(classname = "SVR",
                    private = list(
                      estimator_type = "regressor",
                      model = NULL,
+                     scale = NULL,
                      kernel = NULL,
                      degree = NULL,
                      gamma = NULL,
                      coef0 = NULL,
+                     cost = NULL,
+                     cache_size = NULL,
                      tolerance = NULL,
                      epsilon = NULL,
-                     shrinking = NULL
+                     shrinking = NULL,
+                     cross = NULL,
+                     probability = NULL,
+                     fitted = NULL
                    ),
                    public = list(
                      #' @description Creates a new instance of R6 Class of SVR
@@ -471,15 +496,22 @@ SVR <- R6::R6Class(classname = "SVR",
                      #' @examples
                      #' svr <- SVR$new()
                      #' svr <- SVR$new(kernel = "polynomial")
-                     initialize = function(kernel = "radial", degree = 3, gamma = NULL, coef0 = 0, tolerance = 0.001,
-                                           epsilon = 0.1, shrinking = TRUE){
+                     initialize = function(scale = TRUE, kernel = "radial", degree = 3, gamma = NULL, coef0 = 0, cost = 1,
+                                           cache_size = 40, tolerance = 0.001, epsilon = 0.1, shrinking = TRUE, cross = 0,
+                                           probability = FALSE, fitted = TRUE){
+                       private$scale = scale
                        private$kernel = kernel
                        private$degree = degree
                        private$gamma = gamma
                        private$coef0 = coef0
+                       private$cost = cost
+                       private$cache_size = cache_size
                        private$tolerance = tolerance
                        private$epsilon = epsilon
                        private$shrinking = shrinking
+                       private$cross = cross
+                       private$probability = probability
+                       private$fitted = fitted
                      },
                      #' @description Fit the SVM model from the training set (X, y).
                      #'
@@ -501,10 +533,11 @@ SVR <- R6::R6Class(classname = "SVR",
                      fit = function(X, y){
                        df <- prepareDataset(X, y)
                        gamma = if (is.vector(X)) 1 else 1 / ncol(X)
-                       private$model <- e1071::svm(y ~ ., data = df, kernel = private$kernel, degree = private$degree,
-                                                   gamma = if (is.null(private$gamma)) gamma else private$gamma,
-                                                   coef0 = private$coef0, tolerance = private$tolerance, epsilon = private$epsilon,
-                                                   shrinking = private$shrinking)
+                       private$model <- e1071::svm(y ~ ., data = df, scale = private$scale, kernel = private$kernel, degree = private$degree,
+                                                   gamma = if (is.null(private$gamma)) gamma else private$gamma, coef0 = private$coef0,
+                                                   cost = private$cost, cachesize = private$cache_size, tolerance = private$tolerance, epsilon = private$epsilon,
+                                                   shrinking = private$shrinking, cross = private$cross, probability = private$probability,
+                                                   fitted = private$fitted)
                        private$isFitted <- TRUE
                        invisible(self)
                      },
