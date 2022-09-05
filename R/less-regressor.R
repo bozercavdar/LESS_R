@@ -177,7 +177,7 @@ LESSBase <- R6::R6Class(classname = "LESSBase",
                             if(private$d_normalize) {
                               denom <- rowSums(dists)
                               denom[denom < 1e-08] <- 1e-08
-                              dists <- t(t(dists)/denom)
+                              dists <- dists/denom
                             }
 
                             Z <- dists * predicts
@@ -275,7 +275,7 @@ LESSBase <- R6::R6Class(classname = "LESSBase",
                             if(private$d_normalize) {
                               denom <- rowSums(dists)
                               denom[denom < 1e-08] <- 1e-08
-                              dists <- t(t(dists)/denom)
+                              dists <- dists/denom
                             }
 
                             Z <- dists * predicts
@@ -387,7 +387,7 @@ LESSBase <- R6::R6Class(classname = "LESSBase",
                             if(private$d_normalize) {
                               denom <- rowSums(dists)
                               denom[denom < 1e-08] <- 1e-08
-                              dists <- t(t(dists)/denom)
+                              dists <- dists/denom
                             }
 
                             Z <- dists * predicts
@@ -502,7 +502,7 @@ LESSBase <- R6::R6Class(classname = "LESSBase",
                             if(private$d_normalize) {
                               denom <- rowSums(dists)
                               denom[denom < 1e-08] <- 1e-08
-                              dists <- t(t(dists)/denom)
+                              dists <- dists/denom
                             }
 
                             Z <- dists * predicts
@@ -790,7 +790,7 @@ LESSRegressor <- R6::R6Class(classname = "LESSRegressor",
                                    if(private$d_normalize) {
                                      denom <- rowSums(dists)
                                      denom[denom < 1e-08] <- 1e-08
-                                     dists <- t(t(dists)/denom)
+                                     dists <- dists/denom
                                    }
 
                                    Z0 <- dists * predicts
